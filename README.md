@@ -3,7 +3,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | v1.15.0 |
+| Versão | v1.16.0 |
 | Família | Smart Suite · Estúdio Plá |
 | Tipo | PWA |
 | Deploy | Netlify · HTTPS |
@@ -14,6 +14,7 @@
 | `index.html` | ✅ Sim |
 | `sw.js` | ✅ Sim — bump CACHE_NAME a cada deploy |
 | `manifest.json` | ✅ Sim |
+| `wav-worklet.js` | ✅ Sim — AudioWorklet da captura WAV 6ch |
 | `support.js` | ❌ NUNCA |
 
 ## Deploy

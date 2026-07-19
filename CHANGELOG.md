@@ -1,5 +1,25 @@
 # Changelog — Smart Khroma
 
+## [v1.16.0] — 2026-07-19
+
+### Performance — captura do WAV 6ch tirada da thread principal
+- Pista nova investigando o pipoca: você relatou que acontece no PLAY puro
+  (sem gravar), em duas máquinas diferentes — isso não bate com a causa
+  do vídeo travado (aquela correção só age durante REC). Aponta pra carga
+  de processamento na thread principal durante qualquer reprodução
+- Os 6 ScriptProcessorNode que capturam o WAV 6ch (rodavam o tempo todo
+  que tem áudio tocando, não só durante REC — despacham callback na
+  THREAD PRINCIPAL, é uma API depreciada por causa disso) foram trocados
+  por AudioWorkletNode, que roda na thread de áudio dedicada. Mesma
+  função, mesmo formato de dado — só tira esse trabalho de cima da thread
+  que também cuida da tela/interação
+- Cai automaticamente pro ScriptProcessor antigo se o navegador não tiver
+  AudioWorklet (compatibilidade), sem quebrar nada
+- Testado: WAV 6ch continua capturando os dados certos com o novo
+  caminho. Ainda não é garantia de que resolve o pipoca sozinho — mas é
+  uma redução real e mensurável de carga na thread principal durante
+  qualquer reprodução, não só gravação
+
 ## [v1.15.0] — 2026-07-19
 
 ### Neve 1073 — EQ real implementado (pedido direto: "quero aprender o de verdade")

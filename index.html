@@ -1754,6 +1754,15 @@ class Component extends DCLogic {
       this.analyserMain = this._mkAn(1024,0.85); // [SK-PERF] 2048→1024
       this.analyserL    = this._mkAn(1024,0.50); // [SK-PERF] 2048→1024
       this.analyserR    = this._mkAn(1024,0.50); // [SK-PERF] 2048→1024
+      // [SK-PERF] Captura do WAV 6ch: tira da ScriptProcessorNode (thread
+      // principal) e move pra AudioWorklet (thread de áudio dedicada) —
+      // suspeita forte de custo real de CPU durante PLAY, não só REC.
+      // Carrega em paralelo, sem travar nada; se não carregar, cai pro
+      // ScriptProcessor de sempre (_attachRec6Procs já checa isso).
+      this._workletReady=false;
+      this.audioCtx.audioWorklet.addModule('./wav-worklet.js')
+        .then(()=>{ this._workletReady=true; })
+        .catch(e=>{ console.warn('[SK-PERF] AudioWorklet indisponível, usando ScriptProcessor:',e.message); this._workletReady=false; });
     }
     if (this.audioCtx.state==='suspended') this.audioCtx.resume();
   }
@@ -5118,6 +5127,31 @@ class Component extends DCLogic {
     if(!this.audioCtx||!this.chGainNodes.L) return;
     const ctx=this.audioCtx;
     this.rec6Procs=[];
+    // [SK-PERF] AudioWorklet (thread de áudio) quando disponível — só cai
+    // pro ScriptProcessor (thread principal, mais pesado) se o módulo não
+    // carregou a tempo. Mesmo consumidor (this.rec6Bufs) nos dois casos.
+    if(this._workletReady){
+      ['L','R','C','LFE','Ls','Rs'].forEach(ch=>{
+        if(!this.chGainNodes[ch]) return;
+        try{
+          const node=new AudioWorkletNode(ctx,'wav-capture-processor',{numberOfInputs:1,numberOfOutputs:0,channelCount:1,processorOptions:{chunkSamples:4096}});
+          node.port.onmessage=(e)=>{
+            if(!this.gravando) return;
+            this.rec6Bufs[ch].push(e.data);
+          };
+          this.chGainNodes[ch].connect(node);
+          this.rec6Procs.push(node);
+        }catch(_){}
+      });
+      if(this.rec6Procs.length===6){
+        this.rec6Proc=this.rec6Procs[0]||null;
+        console.log(`[SK] rec6Procs attached via AudioWorklet: ${this.rec6Procs.length}`);
+        return;
+      }
+      // fallback se algo deu errado na metade — limpa e cai pro ScriptProcessor
+      this.rec6Procs.forEach(n=>{try{n.disconnect();}catch(_){}});
+      this.rec6Procs=[];
+    }
     ['L','R','C','LFE','Ls','Rs'].forEach(ch=>{
       if(!this.chGainNodes[ch]) return;
       try{
@@ -5132,7 +5166,7 @@ class Component extends DCLogic {
       }catch(_){}
     });
     this.rec6Proc=this.rec6Procs[0]||null;
-    console.log(`[SK] rec6Procs attached: ${this.rec6Procs.length} ScriptProcessors`);
+    console.log(`[SK] rec6Procs attached via ScriptProcessor (fallback): ${this.rec6Procs.length}`);
   }
 
   _db2lin(db){ return Math.pow(10, db/20); }

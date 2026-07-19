@@ -412,6 +412,62 @@
                 <div onClick="{{ onChTrimReset }}" style="margin-top:8px;padding:14px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.25);color:#5a8aaa;user-select:none">RESET TRIMS</div>
               </div>
 
+              <!-- EQ NEVE 1073 — [SK-FIX] controles reais, frequências
+                   chaveadas iguais ao hardware de verdade. Até a página
+                   dedicada existir (arrastar pra ver o aparelho inteiro),
+                   os controles moram aqui, mas já mexem no sinal de verdade -->
+              <div style="padding:20px 24px;border-bottom:1px solid rgba(0,80,160,0.22)">
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:19px;color:#f5a623;letter-spacing:2px;margin-bottom:2px;font-weight:700">EQ NEVE 1073</div>
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:13px;color:#3a5870;margin-bottom:12px">entra antes do SSL — unidade de canal separada, igual um estúdio de verdade encadearia</div>
+
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:15px;color:#5a8aaa;letter-spacing:1px;margin-bottom:6px">CORTE DE GRAVE (HPF)</div>
+                <div style="display:flex;gap:4px;margin-bottom:14px">
+                  <div ref="{{ neveHPF0Ref }}" onClick="{{ onNeveHPF0 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(245,166,35,0.45);background:rgba(245,166,35,0.07);color:#f5a623;user-select:none">OFF</div>
+                  <div ref="{{ neveHPF1Ref }}" onClick="{{ onNeveHPF1 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">50</div>
+                  <div ref="{{ neveHPF2Ref }}" onClick="{{ onNeveHPF2 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">80</div>
+                  <div ref="{{ neveHPF3Ref }}" onClick="{{ onNeveHPF3 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">160</div>
+                  <div ref="{{ neveHPF4Ref }}" onClick="{{ onNeveHPF4 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">300</div>
+                </div>
+
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:15px;color:#5a8aaa;letter-spacing:1px;margin-bottom:6px">GRAVE (SHELF) · Hz</div>
+                <div style="display:flex;gap:4px;margin-bottom:6px">
+                  <div ref="{{ neveLowFreq0Ref }}" onClick="{{ onNeveLowFreq0 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">35</div>
+                  <div ref="{{ neveLowFreq1Ref }}" onClick="{{ onNeveLowFreq1 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">60</div>
+                  <div ref="{{ neveLowFreq2Ref }}" onClick="{{ onNeveLowFreq2 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(245,166,35,0.45);background:rgba(245,166,35,0.07);color:#f5a623;user-select:none">110</div>
+                  <div ref="{{ neveLowFreq3Ref }}" onClick="{{ onNeveLowFreq3 }}" style="flex:1;padding:10px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">220</div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px">
+                  <div onClick="{{ onNeveLowGainDec }}" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#060e1e;border:1px solid rgba(0,40,80,0.3);border-radius:2px;font-size:18px;color:#4a7090;cursor:pointer;user-select:none">−</div>
+                  <div ref="{{ neveLowGainRef }}" style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#f5a623;width:52px;text-align:center;font-weight:700">0.0</div>
+                  <div onClick="{{ onNeveLowGainInc }}" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#060e1e;border:1px solid rgba(0,40,80,0.3);border-radius:2px;font-size:18px;color:#4a7090;cursor:pointer;user-select:none">+</div>
+                  <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:13px;color:#3a5870;margin-left:4px">dB (±16)</div>
+                </div>
+
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:15px;color:#5a8aaa;letter-spacing:1px;margin-bottom:6px">MÉDIO (VARREDURA) · Hz</div>
+                <div style="display:flex;gap:4px;margin-bottom:6px">
+                  <div ref="{{ neveMidFreq0Ref }}" onClick="{{ onNeveMidFreq0 }}" style="flex:1;padding:9px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">360</div>
+                  <div ref="{{ neveMidFreq1Ref }}" onClick="{{ onNeveMidFreq1 }}" style="flex:1;padding:9px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">700</div>
+                  <div ref="{{ neveMidFreq2Ref }}" onClick="{{ onNeveMidFreq2 }}" style="flex:1;padding:9px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;border-radius:4px;cursor:pointer;border:1px solid rgba(245,166,35,0.45);background:rgba(245,166,35,0.07);color:#f5a623;user-select:none">1.6k</div>
+                  <div ref="{{ neveMidFreq3Ref }}" onClick="{{ onNeveMidFreq3 }}" style="flex:1;padding:9px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">3.2k</div>
+                  <div ref="{{ neveMidFreq4Ref }}" onClick="{{ onNeveMidFreq4 }}" style="flex:1;padding:9px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">4.8k</div>
+                  <div ref="{{ neveMidFreq5Ref }}" onClick="{{ onNeveMidFreq5 }}" style="flex:1;padding:9px 0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,80,160,0.30);background:#081422;color:#5a90b8;user-select:none">7.2k</div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px">
+                  <div onClick="{{ onNeveMidGainDec }}" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#060e1e;border:1px solid rgba(0,40,80,0.3);border-radius:2px;font-size:18px;color:#4a7090;cursor:pointer;user-select:none">−</div>
+                  <div ref="{{ neveMidGainRef }}" style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#f5a623;width:52px;text-align:center;font-weight:700">0.0</div>
+                  <div onClick="{{ onNeveMidGainInc }}" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#060e1e;border:1px solid rgba(0,40,80,0.3);border-radius:2px;font-size:18px;color:#4a7090;cursor:pointer;user-select:none">+</div>
+                  <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:13px;color:#3a5870;margin-left:4px">dB (±18)</div>
+                </div>
+
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:15px;color:#5a8aaa;letter-spacing:1px;margin-bottom:6px">AGUDO (SHELF · fixo 12kHz)</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+                  <div onClick="{{ onNeveHighGainDec }}" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#060e1e;border:1px solid rgba(0,40,80,0.3);border-radius:2px;font-size:18px;color:#4a7090;cursor:pointer;user-select:none">−</div>
+                  <div ref="{{ neveHighGainRef }}" style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#f5a623;width:52px;text-align:center;font-weight:700">0.0</div>
+                  <div onClick="{{ onNeveHighGainInc }}" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#060e1e;border:1px solid rgba(0,40,80,0.3);border-radius:2px;font-size:18px;color:#4a7090;cursor:pointer;user-select:none">+</div>
+                  <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:13px;color:#3a5870;margin-left:4px">dB (±16)</div>
+                </div>
+              </div>
+
               <!-- 05 Funções Exclusivas -->
               <div style="padding:24px 24px;border-bottom:1px solid rgba(0,80,160,0.22);display:flex;align-items:flex-start;gap:18px">
                 <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#f5a623;margin-top:3px;flex-shrink:0;font-family:'Barlow Semi Condensed',sans-serif">05</div>
@@ -1228,6 +1284,14 @@ class Component extends DCLogic {
     this.masterOutDb   = 0;
     this.neveOn        = true;
     this.neveDriveDb   = 0; // [SK-FIX] drive/amount do Neve — antes só existia liga/desliga
+    // [SK-FIX] EQ de verdade do Neve 1073 — frequências chaveadas iguais ao
+    // hardware real, não contínuas (é assim que o 1073 de verdade funciona)
+    this.neveHPFHz      = 20;   // 20=off · valores reais: 50/80/160/300 Hz
+    this.neveLowShelfHz = 110;  // valores reais: 35/60/110/220 Hz
+    this.neveLowShelfDb = 0;    // ±16dB no hardware real
+    this.neveMidHz      = 1600; // valores reais: 360/700/1600/3200/4800/7200 Hz
+    this.neveMidDb      = 0;    // ±18dB no hardware real
+    this.neveHighShelfDb= 0;    // ±16dB, fixo em 12kHz no hardware real
     this.masterGainNode= null;
     this.neveShaper    = null;
     this.procChains    = {}; // [SK-FIX] cadeia Neve→SSL→Studer por canal (6ch discreto de verdade)
@@ -1271,6 +1335,12 @@ class Component extends DCLogic {
     this.tcModeRefs = [React.createRef(), React.createRef(), React.createRef()];
     this.tcFpsRefs  = [React.createRef(), React.createRef(), React.createRef(), React.createRef(), React.createRef()];
     this.tcMenuStatusRef = React.createRef();
+    // [SK-FIX] Controles reais do EQ do Neve 1073 — frequências chaveadas
+    // (menu, até a página dedicada existir)
+    this.neveHPFValues=[20,50,80,160,300]; this.neveHPFRefs=[React.createRef(),React.createRef(),React.createRef(),React.createRef(),React.createRef()];
+    this.neveLowFreqValues=[35,60,110,220]; this.neveLowFreqRefs=[React.createRef(),React.createRef(),React.createRef(),React.createRef()];
+    this.neveMidFreqValues=[360,700,1600,3200,4800,7200]; this.neveMidFreqRefs=[React.createRef(),React.createRef(),React.createRef(),React.createRef(),React.createRef(),React.createRef()];
+    this.neveLowGainRef=React.createRef(); this.neveMidGainRef=React.createRef(); this.neveHighGainRef=React.createRef();
     this.tcH = React.createRef(); this.tcM = React.createRef();
     this.tcS = React.createRef(); this.tcF = React.createRef();
 
@@ -2499,6 +2569,76 @@ class Component extends DCLogic {
     }
     this._saveProfile();
   }
+
+  // ─── NEVE 1073 EQ — controles reais (frequências chaveadas igual ao
+  // hardware, não contínuas). Até a página dedicada existir, mora no menu ──
+  _neveApplyEQLive(param,value){
+    if(!this.audioCtx) return;
+    const t=this.audioCtx.currentTime;
+    ['L','R','C','LFE','Ls','Rs'].forEach(ch=>{
+      const chain=this.procChains[ch]; if(!chain) return;
+      if(param==='hpfHz')       chain.neveHPF.frequency.setTargetAtTime(value,t,0.01);
+      else if(param==='lowHz')  chain.neveLowShelf.frequency.setTargetAtTime(value,t,0.01);
+      else if(param==='lowDb')  chain.neveLowShelf.gain.setTargetAtTime(value,t,0.01);
+      else if(param==='midHz')  chain.neveMidPeak.frequency.setTargetAtTime(value,t,0.01);
+      else if(param==='midDb')  chain.neveMidPeak.gain.setTargetAtTime(value,t,0.01);
+      else if(param==='highDb') chain.neveHighShelf.gain.setTargetAtTime(value,t,0.01);
+    });
+  }
+  _selectNeveHPF(idx){
+    this.neveHPFHz=this.neveHPFValues[idx];
+    this._neveApplyEQLive('hpfHz',this.neveHPFHz);
+    this.neveHPFRefs.forEach((r,i)=>{
+      if(!r.current) return;
+      const on=i===idx;
+      r.current.style.borderColor=on?'rgba(245,166,35,0.45)':'rgba(0,60,120,0.3)';
+      r.current.style.background =on?'rgba(245,166,35,0.07)':'#030c18';
+      r.current.style.color      =on?'#f5a623':'#1a3050';
+    });
+    this._saveProfile();
+  }
+  onNeveHPF0(){ this._selectNeveHPF(0); } onNeveHPF1(){ this._selectNeveHPF(1); }
+  onNeveHPF2(){ this._selectNeveHPF(2); } onNeveHPF3(){ this._selectNeveHPF(3); }
+  onNeveHPF4(){ this._selectNeveHPF(4); }
+
+  _selectNeveLowFreq(idx){
+    this.neveLowShelfHz=this.neveLowFreqValues[idx];
+    this._neveApplyEQLive('lowHz',this.neveLowShelfHz);
+    this.neveLowFreqRefs.forEach((r,i)=>{
+      if(!r.current) return;
+      const on=i===idx;
+      r.current.style.borderColor=on?'rgba(245,166,35,0.45)':'rgba(0,60,120,0.3)';
+      r.current.style.background =on?'rgba(245,166,35,0.07)':'#030c18';
+      r.current.style.color      =on?'#f5a623':'#1a3050';
+    });
+    this._saveProfile();
+  }
+  onNeveLowFreq0(){ this._selectNeveLowFreq(0); } onNeveLowFreq1(){ this._selectNeveLowFreq(1); }
+  onNeveLowFreq2(){ this._selectNeveLowFreq(2); } onNeveLowFreq3(){ this._selectNeveLowFreq(3); }
+
+  _selectNeveMidFreq(idx){
+    this.neveMidHz=this.neveMidFreqValues[idx];
+    this._neveApplyEQLive('midHz',this.neveMidHz);
+    this.neveMidFreqRefs.forEach((r,i)=>{
+      if(!r.current) return;
+      const on=i===idx;
+      r.current.style.borderColor=on?'rgba(245,166,35,0.45)':'rgba(0,60,120,0.3)';
+      r.current.style.background =on?'rgba(245,166,35,0.07)':'#030c18';
+      r.current.style.color      =on?'#f5a623':'#1a3050';
+    });
+    this._saveProfile();
+  }
+  onNeveMidFreq0(){ this._selectNeveMidFreq(0); } onNeveMidFreq1(){ this._selectNeveMidFreq(1); }
+  onNeveMidFreq2(){ this._selectNeveMidFreq(2); } onNeveMidFreq3(){ this._selectNeveMidFreq(3); }
+  onNeveMidFreq4(){ this._selectNeveMidFreq(4); } onNeveMidFreq5(){ this._selectNeveMidFreq(5); }
+
+  _fmtDb(db){ return (db>0?'+':'')+db.toFixed(1); }
+  onNeveLowGainInc(){ this.neveLowShelfDb=Math.min(16,this.neveLowShelfDb+1); this._neveApplyEQLive('lowDb',this.neveLowShelfDb); if(this.neveLowGainRef.current) this.neveLowGainRef.current.textContent=this._fmtDb(this.neveLowShelfDb); this._saveProfile(); }
+  onNeveLowGainDec(){ this.neveLowShelfDb=Math.max(-16,this.neveLowShelfDb-1); this._neveApplyEQLive('lowDb',this.neveLowShelfDb); if(this.neveLowGainRef.current) this.neveLowGainRef.current.textContent=this._fmtDb(this.neveLowShelfDb); this._saveProfile(); }
+  onNeveMidGainInc(){ this.neveMidDb=Math.min(18,this.neveMidDb+1); this._neveApplyEQLive('midDb',this.neveMidDb); if(this.neveMidGainRef.current) this.neveMidGainRef.current.textContent=this._fmtDb(this.neveMidDb); this._saveProfile(); }
+  onNeveMidGainDec(){ this.neveMidDb=Math.max(-18,this.neveMidDb-1); this._neveApplyEQLive('midDb',this.neveMidDb); if(this.neveMidGainRef.current) this.neveMidGainRef.current.textContent=this._fmtDb(this.neveMidDb); this._saveProfile(); }
+  onNeveHighGainInc(){ this.neveHighShelfDb=Math.min(16,this.neveHighShelfDb+1); this._neveApplyEQLive('highDb',this.neveHighShelfDb); if(this.neveHighGainRef.current) this.neveHighGainRef.current.textContent=this._fmtDb(this.neveHighShelfDb); this._saveProfile(); }
+  onNeveHighGainDec(){ this.neveHighShelfDb=Math.max(-16,this.neveHighShelfDb-1); this._neveApplyEQLive('highDb',this.neveHighShelfDb); if(this.neveHighGainRef.current) this.neveHighGainRef.current.textContent=this._fmtDb(this.neveHighShelfDb); this._saveProfile(); }
   onStuderToggle(){
     this.studerOn=!this.studerOn;
     if(this.audioCtx){
@@ -4882,10 +5022,28 @@ class Component extends DCLogic {
     this._attachRec6Procs();
   }
 
-  // Cadeia mono completa: Neve (saturação) → SSL 4000G (EQ+comp) → Studer (fita)
+  // Cadeia mono completa: Neve 1073 (ganho+EQ+saturação) → SSL 4000G (EQ+comp) → Studer (fita)
   _buildChannelChain(ctx){
     const neve = ctx.createWaveShaper();
     neve.curve = this._neveCurve(); neve.oversample='2x';
+
+    // [SK-FIX] EQ de verdade do Neve 1073 — pedido direto: "quero o Neve
+    // 1073 de verdade, pra aprender ele, não um botão só". Topologia real:
+    // corte grave (HPF chaveado) → grave (shelf, frequências chaveadas
+    // 35/60/110/220Hz) → médio (peaking, frequências chaveadas 360Hz–
+    // 7.2kHz, essa é a banda "varredura" característica do 1073) → agudo
+    // (shelf fixo em 12kHz — no hardware real não é ajustável em frequência,
+    // só em ganho). Fica ANTES do estágio SSL — é uma unidade de canal
+    // separada entrando na mesa, igual um estúdio de verdade encadearia.
+    // Flat por padrão (ganho 0, HPF em 20Hz = fora do alcance audível).
+    const neveHPF = ctx.createBiquadFilter();
+    neveHPF.type='highpass'; neveHPF.frequency.value=this.neveHPFHz||20; neveHPF.Q.value=0.707;
+    const neveLowShelf = ctx.createBiquadFilter();
+    neveLowShelf.type='lowshelf'; neveLowShelf.frequency.value=this.neveLowShelfHz||110; neveLowShelf.gain.value=this.neveLowShelfDb||0;
+    const neveMidPeak = ctx.createBiquadFilter();
+    neveMidPeak.type='peaking'; neveMidPeak.frequency.value=this.neveMidHz||1600; neveMidPeak.Q.value=0.9; neveMidPeak.gain.value=this.neveMidDb||0;
+    const neveHighShelf = ctx.createBiquadFilter();
+    neveHighShelf.type='highshelf'; neveHighShelf.frequency.value=12000; neveHighShelf.gain.value=this.neveHighShelfDb||0;
 
     const sslLow = ctx.createBiquadFilter();
     sslLow.type='lowshelf'; sslLow.frequency.value=80; sslLow.gain.value=2;
@@ -4917,7 +5075,11 @@ class Component extends DCLogic {
     limiter.release.value = 0.05;
     limiter.knee.value = 0;        // hard knee — teto é teto
 
-    neve.connect(sslLow);
+    neve.connect(neveHPF);
+    neveHPF.connect(neveLowShelf);
+    neveLowShelf.connect(neveMidPeak);
+    neveMidPeak.connect(neveHighShelf);
+    neveHighShelf.connect(sslLow);
     sslLow.connect(sslLowMid);
     sslLowMid.connect(sslHighMid);
     sslHighMid.connect(sslHigh);
@@ -4926,7 +5088,7 @@ class Component extends DCLogic {
     studerShaper.connect(studerHeadShelf);
     studerHeadShelf.connect(limiter);
 
-    return {neve,sslLow,sslLowMid,sslHighMid,sslHigh,sslComp,studerShaper,studerHeadShelf,limiter};
+    return {neve,neveHPF,neveLowShelf,neveMidPeak,neveHighShelf,sslLow,sslLowMid,sslHighMid,sslHigh,sslComp,studerShaper,studerHeadShelf,limiter};
   }
 
   // Neve-style soft saturation — even-harmonic warmth (class-A transformer curve)
@@ -5171,6 +5333,8 @@ class Component extends DCLogic {
         autoLevelOn:this.autoLevelOn,
         limiterCeilingDb:this.limiterCeilingDb,
         neveDriveDb:this.neveDriveDb,
+        neveHPFHz:this.neveHPFHz, neveLowShelfHz:this.neveLowShelfHz, neveLowShelfDb:this.neveLowShelfDb,
+        neveMidHz:this.neveMidHz, neveMidDb:this.neveMidDb, neveHighShelfDb:this.neveHighShelfDb,
         normTarget:this.normTarget,
         normMode:this.normMode,
         themeIdx:this.themeIdx||0,
@@ -5195,6 +5359,12 @@ class Component extends DCLogic {
       if(d.autoLevelOn!=null) this.autoLevelOn=d.autoLevelOn;
       if(d.limiterCeilingDb!=null) this.limiterCeilingDb=d.limiterCeilingDb;
       if(d.neveDriveDb!=null) this.neveDriveDb=d.neveDriveDb;
+      if(d.neveHPFHz!=null) this.neveHPFHz=d.neveHPFHz;
+      if(d.neveLowShelfHz!=null) this.neveLowShelfHz=d.neveLowShelfHz;
+      if(d.neveLowShelfDb!=null) this.neveLowShelfDb=d.neveLowShelfDb;
+      if(d.neveMidHz!=null) this.neveMidHz=d.neveMidHz;
+      if(d.neveMidDb!=null) this.neveMidDb=d.neveMidDb;
+      if(d.neveHighShelfDb!=null) this.neveHighShelfDb=d.neveHighShelfDb;
       if(d.normTarget!=null)  this.normTarget=d.normTarget;
       if(d.normMode)          this.normMode=d.normMode;
       if(d.themeIdx!=null)    setTimeout(()=>this._setTheme(d.themeIdx),300);
@@ -5792,6 +5962,25 @@ class Component extends DCLogic {
       tcMode0Ref:this.tcModeRefs[0], tcMode1Ref:this.tcModeRefs[1], tcMode2Ref:this.tcModeRefs[2],
       tcFps0Ref:this.tcFpsRefs[0],   tcFps1Ref:this.tcFpsRefs[1],   tcFps2Ref:this.tcFpsRefs[2],
       tcFps3Ref:this.tcFpsRefs[3],   tcFps4Ref:this.tcFpsRefs[4],
+      // EQ Neve 1073
+      neveHPF0Ref:this.neveHPFRefs[0], neveHPF1Ref:this.neveHPFRefs[1], neveHPF2Ref:this.neveHPFRefs[2],
+      neveHPF3Ref:this.neveHPFRefs[3], neveHPF4Ref:this.neveHPFRefs[4],
+      onNeveHPF0:this.onNeveHPF0.bind(this), onNeveHPF1:this.onNeveHPF1.bind(this),
+      onNeveHPF2:this.onNeveHPF2.bind(this), onNeveHPF3:this.onNeveHPF3.bind(this), onNeveHPF4:this.onNeveHPF4.bind(this),
+      neveLowFreq0Ref:this.neveLowFreqRefs[0], neveLowFreq1Ref:this.neveLowFreqRefs[1],
+      neveLowFreq2Ref:this.neveLowFreqRefs[2], neveLowFreq3Ref:this.neveLowFreqRefs[3],
+      onNeveLowFreq0:this.onNeveLowFreq0.bind(this), onNeveLowFreq1:this.onNeveLowFreq1.bind(this),
+      onNeveLowFreq2:this.onNeveLowFreq2.bind(this), onNeveLowFreq3:this.onNeveLowFreq3.bind(this),
+      neveMidFreq0Ref:this.neveMidFreqRefs[0], neveMidFreq1Ref:this.neveMidFreqRefs[1],
+      neveMidFreq2Ref:this.neveMidFreqRefs[2], neveMidFreq3Ref:this.neveMidFreqRefs[3],
+      neveMidFreq4Ref:this.neveMidFreqRefs[4], neveMidFreq5Ref:this.neveMidFreqRefs[5],
+      onNeveMidFreq0:this.onNeveMidFreq0.bind(this), onNeveMidFreq1:this.onNeveMidFreq1.bind(this),
+      onNeveMidFreq2:this.onNeveMidFreq2.bind(this), onNeveMidFreq3:this.onNeveMidFreq3.bind(this),
+      onNeveMidFreq4:this.onNeveMidFreq4.bind(this), onNeveMidFreq5:this.onNeveMidFreq5.bind(this),
+      neveLowGainRef:this.neveLowGainRef, neveMidGainRef:this.neveMidGainRef, neveHighGainRef:this.neveHighGainRef,
+      onNeveLowGainInc:this.onNeveLowGainInc.bind(this), onNeveLowGainDec:this.onNeveLowGainDec.bind(this),
+      onNeveMidGainInc:this.onNeveMidGainInc.bind(this), onNeveMidGainDec:this.onNeveMidGainDec.bind(this),
+      onNeveHighGainInc:this.onNeveHighGainInc.bind(this), onNeveHighGainDec:this.onNeveHighGainDec.bind(this),
       tcMenuStatusRef:this.tcMenuStatusRef,
       tcH:this.tcH, tcM:this.tcM, tcS:this.tcS, tcF:this.tcF,
       onTcMode0:this.onTcMode0.bind(this), onTcMode1:this.onTcMode1.bind(this), onTcMode2:this.onTcMode2.bind(this),

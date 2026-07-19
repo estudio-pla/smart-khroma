@@ -1,5 +1,23 @@
 # Changelog — Smart Khroma
 
+## [v1.15.0] — 2026-07-19
+
+### Neve 1073 — EQ real implementado (pedido direto: "quero aprender o de verdade")
+- Nova unidade de canal, topologia igual ao hardware real, entrando ANTES
+  do SSL (mic → Neve 1073 → SSL → Studer → Limiter, igual um estúdio de
+  verdade encadearia):
+  - **Corte de grave (HPF)**: chaveado — OFF / 50 / 80 / 160 / 300 Hz
+  - **Grave (shelf)**: frequência chaveada — 35 / 60 / 110 / 220 Hz, ganho
+    ±16dB
+  - **Médio (a banda "varredura" característica do 1073)**: frequência
+    chaveada — 360 / 700 / 1.6k / 3.2k / 4.8k / 7.2k Hz, ganho ±18dB
+  - **Agudo (shelf)**: fixo em 12kHz (igual o hardware real — não é
+    ajustável em frequência), ganho ±16dB
+- Controles reais no menu por enquanto (a página dedicada, arrastável,
+  ainda vem depois) — testado com tom de teste em várias frequências:
+  HPF em 300Hz derrubou ~91% do sinal em 60Hz, boost de médio em +12dB
+  aumentou o nível medido de verdade. Não é cosmético, mexe no sinal real
+
 ## [v1.14.0] — 2026-07-19
 
 ### Correlação L/R — agora escolhe entrada ou saída

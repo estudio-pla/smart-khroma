@@ -1,8 +1,8 @@
-// Smart Khroma — Service Worker v16
+// Smart Khroma — Service Worker v17
 // Estúdio Plá · 2026
-// A cada deploy com mudanças: incrementar CACHE_NAME (v16 → v17 → etc.)
+// A cada deploy com mudanças: incrementar CACHE_NAME (v17 → v18 → etc.)
 
-const CACHE_NAME = 'smart-khroma-v16';
+const CACHE_NAME = 'smart-khroma-v17';
 
 const ASSETS = [
   './',

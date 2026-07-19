@@ -874,7 +874,13 @@
           <div ref="{{ phasePanelRef }}" class="main-panel" style="display:flex;flex-direction:column;flex:0 0 17%">
             <div class="panel-hdr" style="padding:6px 8px 6px 14px;font-family:'Barlow Semi Condensed',sans-serif;font-size:19px;color:#7ab0d8;letter-spacing:3px;font-weight:700;border-bottom:1px solid rgba(0,100,180,0.32);flex-shrink:0;background:#010810;display:flex;align-items:center;justify-content:space-between">
               <span ref="{{ phaseHdrLblRef }}">PHASESCOPE · 5.1</span>
-              <span onClick="{{ onPhaseModeToggle }}" ref="{{ phaseModeBtnRef }}" title="Alternar: Goniômetro / Osciloscópio / XY Lissajous" style="font-size:13px;letter-spacing:1px;color:#3a5870;border:1px solid rgba(0,60,120,0.30);border-radius:3px;padding:2px 8px;cursor:pointer;user-select:none;font-weight:600;white-space:nowrap" style-hover="color:#88ccff;border-color:rgba(0,140,255,0.50)">SCOPE</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <!-- [SK-FIX] pedido direto: a correlação lia sempre pré-efeitos
+                     (entrada), sem forma de saber ou trocar. Agora dá pra
+                     alternar entre entrada e o sinal já processado (saída) -->
+                <span onClick="{{ onCorrSourceToggle }}" ref="{{ corrSrcBtnRef }}" title="Correlação L/R lida na entrada (pré Neve/SSL/Studer) ou na saída (pós tudo, o que grava/monitora)" style="font-size:13px;letter-spacing:1px;color:#3a5870;border:1px solid rgba(0,60,120,0.30);border-radius:3px;padding:2px 8px;cursor:pointer;user-select:none;font-weight:600;white-space:nowrap" style-hover="color:#88ccff;border-color:rgba(0,140,255,0.50)">CORR: IN</span>
+                <span onClick="{{ onPhaseModeToggle }}" ref="{{ phaseModeBtnRef }}" title="Alternar: Goniômetro / Osciloscópio / XY Lissajous" style="font-size:13px;letter-spacing:1px;color:#3a5870;border:1px solid rgba(0,60,120,0.30);border-radius:3px;padding:2px 8px;cursor:pointer;user-select:none;font-weight:600;white-space:nowrap" style-hover="color:#88ccff;border-color:rgba(0,140,255,0.50)">SCOPE</span>
+              </div>
             </div>
             <div style="flex:1;position:relative;min-height:0">
               <canvas ref="{{ phaseRef }}" style="display:block;position:absolute;inset:0;width:100%;height:100%"></canvas>
@@ -1232,6 +1238,8 @@ class Component extends DCLogic {
     this.masterMeterRef = React.createRef();
     this.rstBtnRef     = React.createRef();
     this._rstArmed = false; this._rstArmTimeout = null;
+    this.corrSrcBtnRef = React.createRef();
+    this._corrSource = 'in'; // 'in' = pré-efeitos (chGainNodes) · 'out' = pós tudo (recTapStereo)
     this.neveBtnRef    = React.createRef();
     this.studerBtnRef  = React.createRef();
 
@@ -1378,6 +1386,30 @@ class Component extends DCLogic {
         const s={}; g.buttons.forEach((b,i)=>{ s[i]=b.pressed; });
         this._gpPrev[g.index]=s; this._gpHold[g.index]=hold;
         // Touchpad (i=17) — sem função proposital, fica livre e seguro
+
+        // [SK-GAMEPAD] Stick esquerdo (eixo Y, padrão do Gamepad API) —
+        // ajuste fino e CONTÍNUO do drive do Neve, de propósito lento
+        // (pedido direto: "movimentar lentamente"). Velocidade em
+        // this._gpNeveSpeed (dB por frame no fundo do curso) — ajustável.
+        if(g.axes && g.axes.length>=2){
+          const axisY=g.axes[1]; // -1 empurrado pra cima, +1 pra baixo
+          const DEADZONE=0.18;
+          if(Math.abs(axisY)>DEADZONE){
+            const speed=this._gpNeveSpeed||0.025;
+            const dir=-Math.sign(axisY); // stick pra cima = drive sobe
+            const mag=(Math.abs(axisY)-DEADZONE)/(1-DEADZONE);
+            this.neveDriveDb=Math.max(-24,Math.min(12,this.neveDriveDb+dir*mag*speed));
+            ['L','R','C','LFE','Ls','Rs'].forEach(ch=>{
+              const chain=this.procChains[ch];
+              if(chain) chain.neve.curve=this._neveCurve();
+            });
+            if(this.neveBtnRef&&this.neveBtnRef.current){
+              this.neveBtnRef.current.title=`NEVE — drive ${this.neveDriveDb>0?'+':''}${this.neveDriveDb.toFixed(1)}dB (scroll ou stick esquerdo)`;
+            }
+            this._gpNeveSaveCounter=(this._gpNeveSaveCounter||0)+1;
+            if(this._gpNeveSaveCounter%20===0) this._saveProfile();
+          }
+        }
       }
       this._gpRaf = requestAnimationFrame(this._gpLoop);
     };
@@ -4367,13 +4399,24 @@ class Component extends DCLogic {
     ctx.beginPath(); ctx.moveTo(cx,cy-6); ctx.lineTo(cx,cy+6); ctx.stroke();
 
     // ── Correlation meter ─────────────────────────────────────
+    // [SK-FIX] Pedido direto: dá pra ler na ENTRADA (chGainNodes — antes de
+    // Neve/SSL/Studer) ou na SAÍDA (recTapStereo — pós tudo, o que grava/
+    // monitora de verdade), alternável pelo botão CORR: IN/OUT no cabeçalho
+    let corrL=this.tdL, corrR=this.tdR;
+    if(this._corrSource==='out' && this.masterAnL && this.masterAnR){
+      if(!this._corrOutL||this._corrOutL.length!==this.masterAnL.fftSize) this._corrOutL=new Float32Array(this.masterAnL.fftSize);
+      if(!this._corrOutR||this._corrOutR.length!==this.masterAnR.fftSize) this._corrOutR=new Float32Array(this.masterAnR.fftSize);
+      this.masterAnL.getFloatTimeDomainData(this._corrOutL);
+      this.masterAnR.getFloatTimeDomainData(this._corrOutR);
+      corrL=this._corrOutL; corrR=this._corrOutR;
+    }
     // Compute Pearson correlation of L and R
-    const len2=Math.min(this.tdL.length,this.tdR.length,512);
+    const len2=Math.min(corrL.length,corrR.length,512);
     let sumL=0,sumR=0,sumLL=0,sumRR=0,sumLR=0;
-    for(let i=0;i<len2;i++){sumL+=this.tdL[i];sumR+=this.tdR[i];}
+    for(let i=0;i<len2;i++){sumL+=corrL[i];sumR+=corrR[i];}
     const mL=sumL/len2, mR=sumR/len2;
     for(let i=0;i<len2;i++){
-      const dl=this.tdL[i]-mL, dr=this.tdR[i]-mR;
+      const dl=corrL[i]-mL, dr=corrR[i]-mR;
       sumLL+=dl*dl; sumRR+=dr*dr; sumLR+=dl*dr;
     }
     const corr=(sumLL<1e-12||sumRR<1e-12)?0:sumLR/Math.sqrt(sumLL*sumRR);
@@ -5376,6 +5419,19 @@ class Component extends DCLogic {
     }
   }
 
+  // [SK-FIX] Pedido direto: a correlação L/R sempre lia pré-efeitos (entrada),
+  // sem indicação nem forma de trocar. Agora alterna entre entrada e saída.
+  onCorrSourceToggle(){
+    this._corrSource = this._corrSource==='in' ? 'out' : 'in';
+    const b=this.corrSrcBtnRef.current;
+    if(b){
+      const isOut=this._corrSource==='out';
+      b.textContent = isOut?'CORR: OUT':'CORR: IN';
+      b.style.color = isOut?'#f5a623':'#3a5870';
+      b.style.borderColor = isOut?'rgba(245,166,35,0.45)':'rgba(0,60,120,0.30)';
+    }
+  }
+
   // ─── OSCILLOSCOPE DRAW ──────────────────────────────────────────
   _drawScope(ctx, w, h){
     ctx.fillStyle='rgba(0,4,14,0.18)'; ctx.fillRect(0,0,w,h);
@@ -5660,6 +5716,7 @@ class Component extends DCLogic {
       recLedRef:this.recLedRef,recBtnRef:this.recBtnRef,playBtnRef:this.playBtnRef,pwrBtnRef:this.pwrBtnRef,
       backBtnRef:this.backBtnRef,nextBtnRef:this.nextBtnRef,
       monBtnRef:this.monBtnRef,onMonToggle:this.onMonToggle.bind(this),
+      corrSrcBtnRef:this.corrSrcBtnRef,onCorrSourceToggle:this.onCorrSourceToggle.bind(this),
       onBack:this.onBack.bind(this),onNext:this.onNext.bind(this),
       onFullscreen:this.onFullscreen.bind(this),
       fileInputRef:this.fileInputRef,

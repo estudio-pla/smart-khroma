@@ -1,5 +1,17 @@
 # Changelog — Smart Khroma
 
+## [v1.14.0] — 2026-07-19
+
+### Correlação L/R — agora escolhe entrada ou saída
+- Pergunta direta: a leitura sempre foi feita pré-efeitos (entrada — antes
+  de Neve/SSL/Studer). Adicionado botão CORR: IN/OUT no cabeçalho do
+  Phasescope pra alternar pra saída (pós tudo, o que grava/monitora)
+
+### Gamepad — stick esquerdo ajusta o Neve devagar, de propósito
+- Novo: mover o stick esquerdo pra cima/baixo ajusta o drive do Neve de
+  forma contínua e lenta (analógico de verdade, não só passo a passo) —
+  velocidade pensada pra ser detalhada, dá pra regular depois
+
 ## [v1.13.0] — 2026-07-19
 
 ### RIDER — o rodapé finalmente mostra o valor de verdade

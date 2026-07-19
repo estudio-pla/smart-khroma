@@ -3944,10 +3944,26 @@ class Component extends DCLogic {
       const pk=Math.max(this.levels.L,this.levels.R);
       this.outputRef.current.textContent=isFinite(pk)&&pk>-60?pk.toFixed(1)+' dBFS':'— dBFS';
     }
-    // Rider status
+    // [SK-FIX] Rider/RIDER — antes mostrava "ON/OFF · LUFS" (sobra do rider
+    // antigo que perseguia um alvo de LUFS, removido na v1.3.0). Scroll
+    // no botão já ajustava o teto de verdade (limiterCeilingDb) mas o
+    // rodapé nunca refletia isso — mexia o valor real sem mostrar nada.
+    // Agora sempre mostra o teto em dBTP; com o mostrador ligado (clique),
+    // soma a redução ao vivo que o limitador está aplicando
     if(this.compRef.current){
-      this.compRef.current.textContent=this.autoLevelOn?`ON · ${this.ldTarget} LUFS`:'OFF';
-      this.compRef.current.style.color=this.autoLevelOn?this.theme.tc:'#7090b0';
+      const ceiling=this.limiterCeilingDb!==undefined?this.limiterCeilingDb:-1;
+      if(this.autoLevelOn){
+        let maxReduction=0;
+        ['L','R','C','LFE','Ls','Rs'].forEach(ch=>{
+          const lim=this.procChains[ch]&&this.procChains[ch].limiter;
+          if(lim&&lim.reduction<maxReduction) maxReduction=lim.reduction;
+        });
+        this.compRef.current.textContent=`${ceiling.toFixed(1)}dBTP · ${maxReduction.toFixed(1)}dB`;
+        this.compRef.current.style.color=maxReduction<-0.3?'#f5a623':this.theme.tc;
+      } else {
+        this.compRef.current.textContent=`${ceiling.toFixed(1)} dBTP`;
+        this.compRef.current.style.color='#aad0e8';
+      }
     }
     if(this.playlistRef.current&&this.playlist.length)
       this.playlistRef.current.textContent=`${this.currentIdx+1}/${this.playlist.length} track${this.playlist.length>1?'s':''}`;

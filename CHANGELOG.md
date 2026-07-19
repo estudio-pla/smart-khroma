@@ -1,5 +1,16 @@
 # Changelog — Smart Khroma
 
+## [v1.13.0] — 2026-07-19
+
+### RIDER — o rodapé finalmente mostra o valor de verdade
+- Achado direto: scroll no RIDER já ajustava o teto real do limitador
+  (dBTP), mas o texto do rodapé nunca refletia isso — mostrava "ON/OFF ·
+  LUFS", sobra do rider antigo (removido na v1.3.0, perseguia um alvo de
+  LUFS). Mexia o valor de verdade sem mostrar nada — exatamente o tipo de
+  coisa que pedido direto chamou de "não profissional"
+- Agora sempre mostra o teto em dBTP; com o mostrador ligado (clique),
+  soma a redução ao vivo que o limitador está aplicando naquele momento
+
 ## [v1.12.0] — 2026-07-19
 
 ### RST — exige confirmação agora (bug de perda de trabalho corrigido)

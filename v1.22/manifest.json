@@ -1,0 +1,26 @@
+{
+  "name": "Smart Khroma — Estúdio Plá",
+  "short_name": "Smart Khroma",
+  "description": "Monitor de áudio profissional 5.1 · Estúdio Plá",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "theme_color": "#000d1a",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

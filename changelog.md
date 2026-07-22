@@ -1,5 +1,27 @@
 # Changelog — Smart Khroma
 
+## [v1.22.0] — 2026-07-22
+
+### FIX — Frame rate padronizado em 25fps (era 30fps, entregando ~13-16fps real)
+- Diagnóstico feito em cima dos 3 arquivos reais entregues pelo Kaue
+  (REC, Export MP4, PLA Render): frame rate médio de verdade ficava em
+  13-16fps mesmo pedindo 30fps ao `captureStream()`, com engasgos de
+  até 635ms. Causa: o ScriptProcessor que força o redesenho do
+  composite (buffer 2048 ≈ 43ms de intervalo real) já estourava
+  sozinho o orçamento de 33ms exigido por 30fps.
+- `captureStream(30)` → `captureStream(25)` nos 3 caminhos (REC, Export
+  MP4, PLA Render). Throttle do `_drawComposite()`: 31ms → 40ms. Buffer
+  do ScriptProcessor: 2048 → 1024 (~21ms de intervalo real, folga real
+  sob os 40ms de orçamento em vez de faltar).
+
+### Plano confirmado com o Kaue — 2 etapas
+1. **Esta versão**: padronizar em 25fps na captura ao vivo (mitigação
+   rápida).
+2. **Próxima**: motor de Render offline (`OfflineAudioContext`, sem
+   tempo real) — resultado final preciso, fps mais alto, sem as
+   limitações da captura ao vivo. Entrega rápida primeiro (qualquer
+   formato), render de qualidade depois, sob demanda.
+
 ## [v1.21.0] — 2026-07-22
 
 ### FIX CRÍTICO — Fader MASTER trocado por deslizante fixo

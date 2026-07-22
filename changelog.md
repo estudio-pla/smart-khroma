@@ -1,5 +1,28 @@
 # Changelog — Smart Khroma
 
+## [v1.26.0] — 2026-07-22
+
+### FIX CRÍTICO — Espectrograma (Waterfall) era cenografia pura
+- Confirmado pelo Kaue: "tenho certeza que não está medindo nada ali".
+  Investigado e confirmado — `_drawWaterfall()` lia `this.analyser`,
+  propriedade que nunca existiu no app (typo; a real é
+  `this.analyserMain`). Sempre `undefined`, então desenhava silêncio o
+  tempo todo, independente do áudio tocando. Corrigido pra ler
+  `this.analyserMain` de verdade. Testado: antes da correção o canvas
+  ficava quase 100% preto; depois, ~83% dos pixels mostram cor real
+  batendo com o sinal tocando.
+- Mesmo bug corrigido na conta de bin→Hz das 7 bandas de oitava do
+  espectro principal (fallback errado de 1024 em vez do
+  `frequencyBinCount` real de 512 — energia somada da faixa errada).
+
+### Confirmado por investigação
+- O espectro principal (barras) e o LUFS já liam dados reais — só o
+  modo waterfall era decorativo.
+- O phasescope é real (correlação L/R genuína, não decorativo), mas
+  mede só 2 canais — o rótulo "5.1 Surround" promete mais do que
+  mostra. Revisão do rótulo/escopo fica pendente pra quando a página
+  dedicada dos medidores existir.
+
 ## [v1.25.0] — 2026-07-22
 
 ### FIX CRÍTICO — Salvar/Restaurar perfil por nome não funcionava

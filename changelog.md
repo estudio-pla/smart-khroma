@@ -1,5 +1,17 @@
 # Changelog — Smart Khroma
 
+## [v1.27.0] — 2026-07-22
+
+### FIX — Phasescope não promete mais "5.1"
+- Regra do estúdio, dita explicitamente: "nunca vamos prometer algo
+  que não entregamos". O rótulo "PHASESCOPE · 5.1 SURROUND" prometia
+  uma leitura espacial dos 6 canais que o instrumento nunca fez — é
+  correlação L/R genuína (2 canais), sempre foi. Corrigido pra
+  "PHASESCOPE · L/R" nos 3 lugares (cabeçalho ao vivo, vídeo
+  exportado, e nos 3 modos do botão SCOPE/Goniômetro/Osciloscópio/
+  Lissajous). O instrumento não mudou — só parou de se anunciar como
+  algo que não é.
+
 ## [v1.26.0] — 2026-07-22
 
 ### FIX CRÍTICO — Espectrograma (Waterfall) era cenografia pura

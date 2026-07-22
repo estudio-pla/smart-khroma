@@ -1,5 +1,32 @@
 # Changelog — Smart Khroma
 
+## [v1.24.0] — 2026-07-22
+
+### FIX — Frame rate baixado mais uma vez (20→15fps)
+- Confirmado: 20fps ainda pipocava um pouco. Baixado pra 15fps.
+  Throttle do `_drawComposite()`: 50ms→66ms.
+
+### FIX CRÍTICO — "Esticado" nos painéis do vídeo exportado
+- Identificado com vídeo enviado: o phasescope (círculo M+/M-) saía
+  visivelmente oval no vídeo gravado/exportado. Causa: `drawPanel()`
+  no `_drawComposite()` esticava cada painel (`ctx.drawImage`) pra
+  caber exato na caixa de destino, sem respeitar a proporção real do
+  canvas ao vivo. Corrigido pra preservar a proporção (letterbox) em
+  vez de deformar.
+
+### FIX CRÍTICO — Nenhum controle do rodapé aparecia no vídeo
+- MASTER, IN e RIDER (com seus deslizantes e VUs) só existiam no DOM/
+  CSS da tela ao vivo — o vídeo gravado/exportado é pintado à mão em
+  `_drawComposite()` (canvas 2D) e nunca desenhava esses controles, só
+  "LRA"/"OUT"/marca d'água. `FOOTER` do composite: 28px→92px. Novas
+  funções `_compDrawSlider()`/`_compDrawMiniVU()` repintam os mesmos
+  deslizantes e VUs do app ao vivo direto no canvas exportado.
+
+### FEAT — IN no rodapé ganhou deslizante + VU
+- Mesmo padrão do MASTER (pedido direto: "coloca o deslizante e o VU
+  no IN igual ao master"). Controla o mesmo ganho de entrada do menu,
+  agora também sempre visível e arrastável no rodapé.
+
 ## [v1.23.0] — 2026-07-22
 
 ### FIX — Frame rate baixado mais uma vez (25→20fps)

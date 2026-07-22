@@ -1,5 +1,26 @@
 # Changelog — Smart Khroma
 
+## [v1.23.0] — 2026-07-22
+
+### FIX — Frame rate baixado mais uma vez (25→20fps)
+- Confirmado pelo usuário: 25fps ainda "pipocava" um pouco. Baixado
+  pra 20fps. Throttle do `_drawComposite()`: 40ms→50ms. Buffer do
+  ScriptProcessor: 1024→512 (~11ms de intervalo real).
+
+### FEAT — RIDER ganhou deslizante
+- Mesmo padrão do MASTER e do Ganho de Entrada: barra horizontal fixa,
+  sempre visível, arrastável, ajustando o teto do limitador (-12 a
+  0 dBTP). Clique no texto "RIDER" continua ligando/desligando o
+  mostrador.
+
+### FIX CRÍTICO — Trim/Solo/Mute por canal não respondiam no mobile
+- O painel CHANNEL LEVELS · 5.1 usava `onMouseDown/Move/Up`, que não
+  cobre toque de forma confiável em navegadores mobile. Trocado pra
+  Pointer Events (unifica mouse, toque e caneta), com pointer capture
+  no início do arrasto — o dedo pode escorregar um pouco pra fora da
+  área do canvas sem perder o controle do trim. `touch-action:none`
+  evita que o gesto de arrastar dispare o scroll da página no celular.
+
 ## [v1.22.0] — 2026-07-22
 
 ### FIX — Frame rate padronizado em 25fps (era 30fps, entregando ~13-16fps real)

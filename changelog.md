@@ -1,5 +1,23 @@
 # Changelog — Smart Khroma
 
+## [v1.21.0] — 2026-07-22
+
+### FIX CRÍTICO — Fader MASTER trocado por deslizante fixo
+- O popup vertical da v1.20 (mesmo já com o binding corrigido) ainda
+  travava em teste real ao arrastar — relatado com vídeo. Em vez de
+  insistir no popup, trocado por completo: **deslizante horizontal
+  fixo, sempre visível**, do lado do texto MSTR, sem clique pra abrir e
+  sem tampar o VU. Grade de dB e alvos de loudness (-14 Spotify/
+  -16 Stream/-23 EBU/-24 Bcast) viraram tick-marks direto na barra.
+
+### FEAT — Ganho de Entrada arrastável
+- A barra que só respondia aos botões +/- agora também arrasta,
+  mesmo padrão de interação do MASTER.
+
+### Regra de processo
+- A partir desta versão, toda alteração ganha número de versão
+  próprio — sem reaproveitar o mesmo v1.X pra vários fixes.
+
 ## [v1.20.0] — 2026-07-22
 
 ### FIX CRÍTICO — Exportação MP4 sem vídeo (3 causas, todas corrigidas)

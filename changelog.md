@@ -1,5 +1,43 @@
 # Changelog — Smart Khroma
 
+## [v1.29.0] — 2026-07-22
+
+### FIX CRÍTICO — causa raiz do "pipoco" de áudio em tempo real
+- O redesenho do composite (usado por REC, RENDER e exportação MP4) rodava
+  dentro de `onaudioprocess` de um `ScriptProcessorNode` **ligado a
+  `this.masterGainNode`** — dentro do próprio grafo de áudio ao vivo.
+  `onaudioprocess` é forçado a rodar na thread principal (motivo da API
+  estar deprecated), e `_drawComposite()` é pesado (canvas 1920×990,
+  múltiplos `drawImage`, gradientes, texto). Sempre que esse desenho
+  estourava o orçamento do buffer (512 amostras ≈ 11ms a 48kHz), a thread
+  de renderização de áudio ficava esperando a thread principal terminar —
+  isso é o estalo/pipoco relatado mesmo com a aba em primeiro plano, em
+  monitoramento normal, sem qualquer relação com fps de vídeo.
+- As quatro rodadas anteriores de redução de fps/buffer (30→25→20→15fps,
+  2048→512 amostras) reduziam a frequência do problema, nunca a causa —
+  por isso continuava "pipocando do mesmo jeito" mesmo depois de tudo isso.
+- **Correção**: trocado o `ScriptProcessorNode` (`this._compTickProc` /
+  `this._exportTickProc`) por `setInterval` em `_toggleRec()` e
+  `onExportMP4()`. O redesenho continua na thread principal, mas agora sem
+  nenhuma ligação ao grafo de áudio — um desenho lento pode enjoar a tela,
+  nunca mais corta o áudio. `onRenderBoth()` herda o fix automaticamente
+  (usa `_toggleRec()` por baixo).
+
+### UI — botão RENDER visível no console principal
+- O botão RENDER só existia dentro do menu de configurações → "Exportar
+  Alta Qualidade" — impossível de achar sem procurar. Agora também aparece
+  direto na barra principal (ao lado de PLAY/REC/POWER).
+
+### Nota importante — tempo real vs. offline
+`onRenderBoth()` ainda toca a faixa do início ao fim em tempo real (não é
+mais rápido que tempo real) — reusa `_toggleRec()`/`_startFile()`, os
+mesmos mecanismos já testados, em vez de um motor `OfflineAudioContext` do
+zero (não testável neste ambiente sem WebCodecs/mp4-muxer via CDN). Com o
+fix acima, tocar em tempo real deixa de pipocar — mas uma faixa de 3
+minutos ainda leva 3 minutos para renderizar. Um motor offline mais rápido
+que tempo real é um projeto maior, ainda não construído — a decidir se vale
+a pena para a v1.30.
+
 ## [v1.28.0] — 2026-07-22
 
 ### FEAT — Motor de RENDER (WAV 5.1 + MP4 num clique)

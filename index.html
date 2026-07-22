@@ -205,7 +205,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(0,80,160,0.30);flex-shrink:0;background:#040e1a">
               <div style="display:flex;flex-direction:column;gap:3px">
                 <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:700;color:#88bbdd;letter-spacing:4px">ESTÚDIO PLÁ</div>
-                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">Smart Khroma · v1.28 · PLA</div>
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">Smart Khroma · v1.29 · PLA</div>
               </div>
               <div onClick="{{ onMenuToggle }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:#0a1828;border:1px solid rgba(0,80,160,0.30);border-radius:4px;font-size:20px;color:#6090b0;cursor:pointer;user-select:none">✕</div>
             </div>
@@ -746,7 +746,7 @@
 
             <!-- Panel footer -->
             <div style="padding:16px 24px;border-top:1px solid rgba(0,80,160,0.25);flex-shrink:0;background:#040e1a;display:flex;justify-content:space-between;align-items:center">
-              <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">ESTÚDIO PLÁ · SMART KHROMA v1.28 · PLA v0.1</div>
+              <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">ESTÚDIO PLÁ · SMART KHROMA v1.29 · PLA v0.1</div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div style="width:8px;height:8px;border-radius:50%;background:#3ecf8e;opacity:0.7"></div>
                 <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;color:#3ecf8e">ATIVO</div>
@@ -780,7 +780,7 @@
             </div>
 
             <!-- Rodapé fixo embaixo, fora do bloco centralizado -->
-            <div style="position:absolute;bottom:36px;left:0;right:0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:600;color:#1a3050;letter-spacing:6px;white-space:nowrap">ESTÚDIO PLÁ · SMART KHROMA · v1.28 · PLA v0.1</div>
+            <div style="position:absolute;bottom:36px;left:0;right:0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:600;color:#1a3050;letter-spacing:6px;white-space:nowrap">ESTÚDIO PLÁ · SMART KHROMA · v1.29 · PLA v0.1</div>
 
           </div>
         </sc-if>
@@ -1078,6 +1078,13 @@
         PLAY
       </div>
 
+      <!-- RENDER — [v1.29] mesmo motor do menu (onRenderBoth), agora visível
+           direto no console principal. Antes só existia dentro do menu de
+           configurações → "Exportar Alta Qualidade", e não dava pra achar. -->
+      <div ref="{{ mainRenderBtnRef }}" onClick="{{ onRenderBoth }}" title="RENDER — Entrega WAV 5.1 (6 canais reais) + MP4 (H.264/AAC 320kbps) num clique só" style="width:150px;height:56px;display:flex;align-items:center;justify-content:center;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.45);border-radius:3px;font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#f5a623;font-weight:700;letter-spacing:3px;cursor:pointer;user-select:none;transition:all 0.12s">
+        ▶ RENDER
+      </div>
+
       <!-- MON — [SK-FIX] retorno do mic pro alto-falante, sempre OFF por
            padrão pra nunca realimentar; opt-in manual, nunca automático -->
       <div ref="{{ monBtnRef }}" onClick="{{ onMonToggle }}" title="MON — Ouvir o mic ao vivo no alto-falante (sempre desligado ao ligar, evita retorno/realimentação)" style="width:90px;height:56px;display:flex;align-items:center;justify-content:center;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:3px;font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;color:#ffffff;font-weight:700;letter-spacing:3px;cursor:pointer;user-select:none;transition:all 0.12s">
@@ -1101,6 +1108,39 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080}}">
+/* ─── CHANGELOG v1.29.0 · 2026-07-22 ────────────────────────────────────────
+   [FIX CRÍTICO — pipoco de áudio em tempo real, causa raiz] O redesenho do
+     composite (usado por REC, RENDER e export MP4) rodava dentro de
+     onaudioprocess de um ScriptProcessorNode LIGADO a this.masterGainNode —
+     ou seja, dentro do próprio grafo de áudio ao vivo. onaudioprocess de
+     ScriptProcessorNode é forçado a rodar na thread principal (é por isso
+     que a API está deprecated), e _drawComposite() é pesado (canvas
+     1920×990, vários drawImage, gradientes, texto). Sempre que esse desenho
+     estourava o orçamento do buffer (512 amostras ≈ 11ms a 48kHz), a thread
+     de renderização de áudio ficava esperando a thread principal — e isso é
+     o estalo/pipoco relatado mesmo em monitoramento ao vivo, com a aba em
+     primeiro plano, sem qualquer relação com fps de vídeo. As quatro rodadas
+     anteriores de redução de fps/buffer (30→25→20→15fps, 2048→512) só
+     reduziam a FREQUÊNCIA do problema, nunca a causa — por isso continuava
+     "pipocando do mesmo jeito" mesmo depois de tudo isso.
+   [FIX] Trocado o ScriptProcessorNode (this._compTickProc / this.
+     _exportTickProc) por setInterval em _toggleRec() e onExportMP4() — o
+     redesenho continua na thread principal, mas agora SEM nenhuma ligação
+     ao grafo de áudio. Um desenho lento pode enjoar a tela, nunca mais vai
+     cortar o áudio. onRenderBoth() herda o fix automaticamente (usa
+     _toggleRec() por baixo).
+   [UI] Botão RENDER agora também aparece direto no console principal (barra
+     PLAY/REC/POWER), não só dentro do menu de configurações — pedido direto
+     depois de relatar que não conseguia achar o botão.
+   [NOTA — real-time vs offline] onRenderBoth() ainda toca a faixa do começo
+     ao fim em tempo real (não é mais rápido que tempo real) — ele reusa
+     _toggleRec()/_startFile(), os mesmos mecanismos já testados, em vez de
+     um motor OfflineAudioContext do zero (não testável neste ambiente, sem
+     WebCodecs/mp4-muxer via CDN). Com o fix acima, tocar em tempo real deixa
+     de pipocar — mas uma faixa de 3 minutos ainda leva 3 minutos pra
+     renderizar. Um motor offline mais rápido que tempo real é um projeto
+     maior, ainda não construído.
+
 /* ─── CHANGELOG v1.28.0 · 2026-07-22 ────────────────────────────────────────
    [FEAT] Motor de RENDER — botão único entrega WAV 5.1 (6 canais reais) +
      MP4 (H.264/AAC 320kbps) numa passada só, tocando a faixa do início ao
@@ -1460,7 +1500,8 @@ class Component extends DCLogic {
     this.exportWavBtnRef   = React.createRef();
     this.export51WavBtnRef = React.createRef();
     this.exportMp4BtnRef   = React.createRef();
-    this.renderBtnRef      = React.createRef(); // [v1.28] botão único RENDER
+    this.renderBtnRef      = React.createRef(); // [v1.28] botão único RENDER (menu)
+    this.mainRenderBtnRef  = React.createRef(); // [v1.29] mesmo RENDER, agora também no console principal — pedido direto: "não estou nem achando o render"
     this.exportStatusRef  = React.createRef();
     this.autoLevelToggleRef     = React.createRef();
     this.autoLevelThumbRef      = React.createRef();
@@ -3475,31 +3516,29 @@ class Component extends DCLogic {
       // roda amarrado ao grafo de áudio, imune a esse throttle de aba em
       // segundo plano — atualiza o timecode/medidores e redesenha o
       // composite direto daqui, sem depender do requestAnimationFrame.
-      try{
-        const ctx=this.audioCtx;
-        // [v1.23] Buffer 2048→1024→512 — a ~48kHz isso cai de ~43ms pra
-        // ~11ms de intervalo real entre callbacks, dando margem folgada sob
-        // o throttle de 50ms (20fps) do _drawComposite(). Com buffer 2048 o
-        // intervalo natural (~43ms) já estourava o orçamento original de
-        // 33ms (30fps) — TODO frame saía atrasado, daí o alvo ter baixado
-        // em etapas até 20fps.
-        this._compTickProc=ctx.createScriptProcessor(512,1,1);
-        this._compTickProc.onaudioprocess=()=>{
-          if(!this.gravando) return;
-          // [v1.18] _processAudio() REMOVIDO daqui — ler 6 AnalyserNodes +
-          // calcular LUFS dentro de onaudioprocess bloqueia o scheduler de
-          // áudio (ScriptProcessor roda na thread principal) causando pipoca
-          // E corrompe os frames do vídeo. Os níveis são calculados pelo
-          // _tick() a 30fps — suficiente para medidores e composite.
-          this.recSeconds=ctx.currentTime-this._recStartAudioTime;
-          if(this.timecodeRef.current){
-            this.timecodeRef.current.textContent=this._tcFormat(Math.floor(this.recSeconds*this.tcFps));
-          }
-          this._drawComposite();
-        };
-        this.masterGainNode.connect(this._compTickProc);
-        this._compTickProc.connect(ctx.createGain()); // keep alive — sem saída de áudio
-      }catch(_){}
+      // [v1.29 FIX-DEFINITIVO — pipoco de áudio em tempo real] O forçador de
+      // redesenho vivia num ScriptProcessorNode ligado a this.masterGainNode.
+      // onaudioprocess de ScriptProcessorNode roda OBRIGATORIAMENTE na thread
+      // principal (é justamente por isso que a API está deprecated) — e
+      // _drawComposite() é pesado (canvas 1920×990, vários drawImage,
+      // gradientes, texto). Toda vez que esse desenho estourava o orçamento
+      // do buffer (512 amostras ≈ 11ms a 48kHz), a thread de renderização de
+      // áudio ficava esperando a thread principal terminar, e isso é
+      // exatamente o estalo/pipoco — mesmo com a aba em primeiro plano,
+      // mesmo fora de export, sempre que REC/RENDER estava ativo. Baixar fps
+      // e buffer (rounds anteriores) só reduzia a frequência do problema,
+      // não a causa. Correção real: setInterval em vez de ScriptProcessor —
+      // roda na mesma thread principal, mas SEM nenhuma ligação ao grafo de
+      // áudio, então mesmo um desenho lento nunca mais atrasa o áudio.
+      const ctx=this.audioCtx;
+      this._compTickInterval=setInterval(()=>{
+        if(!this.gravando) return;
+        this.recSeconds=ctx.currentTime-this._recStartAudioTime;
+        if(this.timecodeRef.current){
+          this.timecodeRef.current.textContent=this._tcFormat(Math.floor(this.recSeconds*this.tcFps));
+        }
+        this._drawComposite();
+      },33);
 
       const webCodecsOK = typeof VideoEncoder!=='undefined' && typeof AudioEncoder!=='undefined' && typeof MediaStreamTrackProcessor!=='undefined';
       if(webCodecsOK){
@@ -3538,7 +3577,7 @@ class Component extends DCLogic {
       this._recDest=null; this._recMode=null;
       this._stopIncrSave();
       this.gravando=false;this.setState({isRecording:false});
-      if(this._compTickProc){ try{this._compTickProc.disconnect();}catch(_){} this._compTickProc=null; }
+      if(this._compTickInterval){ clearInterval(this._compTickInterval); this._compTickInterval=null; }
       // WAV 6ch continua disponível sob demanda no menu (this.rec6Bufs já
       // parou de crescer — onaudioprocess checa this.gravando)
       this.rec6BufL=[];this.rec6BufR=[];
@@ -4070,7 +4109,10 @@ class Component extends DCLogic {
     const st=this.exportStatusRef.current;
     const setStatus=(msg,col)=>{if(st){st.textContent=msg;st.style.color=col||'#f5a623';}};
     const btn=this.renderBtnRef.current;
-    const setBusy=(b)=>{if(!btn) return;btn.style.opacity=b?'0.5':'1';btn.style.pointerEvents=b?'none':'auto';};
+    const btn2=this.mainRenderBtnRef.current;
+    const setBusy=(b)=>{
+      [btn,btn2].forEach(el=>{ if(!el) return; el.style.opacity=b?'0.5':'1'; el.style.pointerEvents=b?'none':'auto'; });
+    };
 
     const buf=this.audioBuf;
     if(!buf){ setStatus('Nenhum arquivo carregado','#e94f4f'); return; }
@@ -4249,15 +4291,10 @@ class Component extends DCLogic {
       // frame nenhum (aba em segundo plano, ou ambiente sem compositor de
       // verdade) — foi essa a causa real do MP4 exportado vazio.
       this._exporting=true;
-      try{
-        // [v1.23] Buffer 512 (era 2048, depois 1024) — mesmo ajuste do REC,
-        // ver _toggleRec: intervalo real bem menor que o throttle de 50ms
-        // do _drawComposite() dá folga real pra bater 20fps de verdade.
-        this._exportTickProc=this.audioCtx.createScriptProcessor(512,1,1);
-        this._exportTickProc.onaudioprocess=()=>{ if(this._exporting) this._drawComposite(); };
-        this.masterGainNode.connect(this._exportTickProc);
-        this._exportTickProc.connect(this.audioCtx.createGain());
-      }catch(_){}
+      // [v1.29 FIX-DEFINITIVO] Mesma correção do _toggleRec (ver comentário
+      // lá) — setInterval em vez de ScriptProcessorNode ligado ao
+      // masterGainNode, pra tirar o redesenho pesado da thread de áudio.
+      this._exportTickInterval=setInterval(()=>{ if(this._exporting) this._drawComposite(); },33);
 
       const d=new Date(),p=x=>String(x).padStart(2,'0');
       const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
@@ -4287,14 +4324,14 @@ class Component extends DCLogic {
       });
 
       this._exporting=false;
-      if(this._exportTickProc){ try{this._exportTickProc.disconnect();}catch(_){} this._exportTickProc=null; }
+      if(this._exportTickInterval){ clearInterval(this._exportTickInterval); this._exportTickInterval=null; }
       if(this._mp4Rec){ await this._mp4Rec.stop(); this._mp4Rec=null; }
       else if(this._fallbackRec){ this._fallbackRec.stop(); this._fallbackRec=null; }
       try{ dest.disconnect(); }catch(_){}
       setStatus(`✓ ${bn.slice(0,22)}… vídeo+áudio exportado`,'#3ecf8e');
     } catch(e){
       this._exporting=false;
-      if(this._exportTickProc){ try{this._exportTickProc.disconnect();}catch(_){} this._exportTickProc=null; }
+      if(this._exportTickInterval){ clearInterval(this._exportTickInterval); this._exportTickInterval=null; }
       setStatus('Erro: '+e.message.slice(0,36),'#e94f4f');
       console.error('MP4 export:',e);
     }
@@ -6728,6 +6765,7 @@ class Component extends DCLogic {
       export51WavBtnRef:this.export51WavBtnRef,
       exportMp4BtnRef:this.exportMp4BtnRef,
       renderBtnRef:this.renderBtnRef,
+      mainRenderBtnRef:this.mainRenderBtnRef,
       exportStatusRef:this.exportStatusRef,
       onAutoLevelToggle:this.onAutoLevelToggle.bind(this),
       onLimiterWheel:this.onLimiterWheel.bind(this),

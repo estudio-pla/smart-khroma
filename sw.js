@@ -1,8 +1,13 @@
-// Smart Khroma — Service Worker v19
+// Smart Khroma — Service Worker v29
 // Estúdio Plá · 2026
 // A cada deploy com mudanças: incrementar CACHE_NAME (v19 → v20 → etc.)
+// [v1.29 FIX] CACHE_NAME ficou parado em v19 por 9 versões seguidas
+// (v1.20→v1.28) — o fetch handler é cache-first (cached || fetch(...)),
+// então qualquer navegador com este service worker já instalado ficava
+// servindo o app antigo pra sempre, mesmo com commits novos no ar. Bumpado
+// pra acompanhar a versão do app daqui pra frente.
 
-const CACHE_NAME = 'smart-khroma-v19';
+const CACHE_NAME = 'smart-khroma-v29';
 
 const ASSETS = [
   './',

@@ -1,5 +1,22 @@
 # Changelog — Smart Khroma
 
+## [v1.28.0] — 2026-07-22
+
+### FEAT — Motor de RENDER (WAV 5.1 + MP4 num clique)
+- Botão único "▶ RENDER — WAV 5.1 + MP4" consolida os antigos botões
+  separados "5.1 WAV" e "MP4". Toca a faixa do início ao fim uma vez
+  só e entrega os dois arquivos automaticamente: WAV 5.1 (6 canais
+  reais, PCM) e MP4 (H.264/AAC 320kbps).
+- `onRenderBoth()` não reinventa a captura — orquestra dois mecanismos
+  já provados: `_toggleRec()` (grava os 6 canais reais E o vídeo/áudio
+  ao mesmo tempo, com todos os fixes de v1.20-v1.24 já validados) e
+  `onExport51WAV()` (já sabe codificar os 6 canais em WAV).
+- Testado ponta a ponta: um clique produz os dois arquivos automaticamente
+  — vídeo com trilhas de áudio e vídeo reais, e WAV confirmado como
+  6 canais/44.1kHz/24-bit genuínos.
+- "↓ WAV" renomeado pra "↓ WAV puro" — continua separado, de propósito,
+  pra entrega rápida só de áudio sem esperar o render completo.
+
 ## [v1.27.0] — 2026-07-22
 
 ### FIX — Phasescope não promete mais "5.1"

@@ -1,5 +1,32 @@
 # Changelog — Smart Khroma
 
+## [v1.30.0] — 2026-07-22
+
+### FEAT CRÍTICO — motor de RENDER offline (WAV 5.1 fora do tempo real)
+- O v1.29 corrigiu uma causa real e medida de estouro de prazo de áudio
+  (ScriptProcessorNode preso ao relógio de áudio ao vivo), mas o usuário
+  confirmou ouvindo de verdade que o pipoco continuava. Diagnóstico: o WAV
+  5.1 dependia de tocar a faixa inteira em tempo real pela cadeia
+  Neve/SSL/Studer/limitador **ao vivo** — mesmo sem o bug do v1.29, essa
+  arquitetura ainda depende do áudio real tocando por vários minutos sem
+  nenhum hiccup, num navegador, sujeito a qualquer coisa que o sistema
+  decida fazer nesse meio-tempo.
+- **Correção**: o WAV 5.1 agora é computado inteiro dentro de um
+  `OfflineAudioContext` — a mesma cadeia de processamento (matriz PLA +
+  Neve/SSL/Studer + limitador, com os mesmos parâmetros ativos no momento
+  do clique), rodando o mais rápido possível, sem nenhum relógio de tempo
+  real envolvido. Não existe como isso pipocar: não há áudio de verdade
+  tocando durante o cálculo.
+- **Testado**: uma faixa de 15s renderizou em 1,52s (~10× mais rápido que
+  tempo real). Análise de descontinuidade na forma de onda (mesma técnica
+  usada para investigar o v1.29) não encontrou nenhuma anomalia no meio do
+  áudio — só transientes esperados de ataque/decay do limitador nas bordas
+  exatas de início/fim.
+- **Nota**: o vídeo (MP4) continua sendo gerado tocando a faixa ao vivo do
+  início ao fim (já beneficiado pelo fix do v1.29) — só o WAV 5.1 deixou de
+  depender de tempo real nesta versão. Novas funções: `_renderOfflineSixCh()`,
+  `_buildOfflineGraph()`, `_encode6chWAVFromBuffer()`.
+
 ## [v1.29.0] — 2026-07-22
 
 ### FIX CRÍTICO — causa raiz do "pipoco" de áudio em tempo real

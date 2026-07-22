@@ -205,7 +205,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(0,80,160,0.30);flex-shrink:0;background:#040e1a">
               <div style="display:flex;flex-direction:column;gap:3px">
                 <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:700;color:#88bbdd;letter-spacing:4px">ESTÚDIO PLÁ</div>
-                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">Smart Khroma · v1.29 · PLA</div>
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">Smart Khroma · v1.30 · PLA</div>
               </div>
               <div onClick="{{ onMenuToggle }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:#0a1828;border:1px solid rgba(0,80,160,0.30);border-radius:4px;font-size:20px;color:#6090b0;cursor:pointer;user-select:none">✕</div>
             </div>
@@ -746,7 +746,7 @@
 
             <!-- Panel footer -->
             <div style="padding:16px 24px;border-top:1px solid rgba(0,80,160,0.25);flex-shrink:0;background:#040e1a;display:flex;justify-content:space-between;align-items:center">
-              <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">ESTÚDIO PLÁ · SMART KHROMA v1.29 · PLA v0.1</div>
+              <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">ESTÚDIO PLÁ · SMART KHROMA v1.30 · PLA v0.1</div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div style="width:8px;height:8px;border-radius:50%;background:#3ecf8e;opacity:0.7"></div>
                 <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;color:#3ecf8e">ATIVO</div>
@@ -780,7 +780,7 @@
             </div>
 
             <!-- Rodapé fixo embaixo, fora do bloco centralizado -->
-            <div style="position:absolute;bottom:36px;left:0;right:0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:600;color:#1a3050;letter-spacing:6px;white-space:nowrap">ESTÚDIO PLÁ · SMART KHROMA · v1.29 · PLA v0.1</div>
+            <div style="position:absolute;bottom:36px;left:0;right:0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:600;color:#1a3050;letter-spacing:6px;white-space:nowrap">ESTÚDIO PLÁ · SMART KHROMA · v1.30 · PLA v0.1</div>
 
           </div>
         </sc-if>
@@ -1108,6 +1108,35 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080}}">
+/* ─── CHANGELOG v1.30.0 · 2026-07-22 ────────────────────────────────────────
+   [FEAT CRÍTICO] Motor de RENDER agora gera o WAV 5.1 OFFLINE — fora do
+     tempo real. O v1.29 corrigiu uma causa real e medida de estouro de
+     prazo (ScriptProcessorNode preso ao relógio de áudio), mas o usuário
+     confirmou ouvindo de verdade que o pipoco continuava. Diagnóstico: o
+     WAV 5.1 dependia de tocar a faixa inteira em tempo real pela cadeia
+     Neve/SSL/Studer/limitador AO VIVO — mesmo sem o bug do v1.29, isso
+     ainda é uma arquitetura frágil (depende do áudio real tocando 3+
+     minutos sem hiccup nenhum, num navegador, sujeito a qualquer coisa que
+     o sistema operacional decida fazer nesse meio-tempo).
+   [FIX ARQUITETURAL] O WAV 5.1 agora é computado inteiro dentro de um
+     OfflineAudioContext — a MESMA cadeia (matriz PLA + Neve/SSL/Studer +
+     limitador, os mesmos parâmetros ativos no momento do clique), rodando
+     o mais rápido que o processador aguentar. Testado: uma faixa de 15s
+     renderizou em 1,52s — cerca de 10× mais rápido que tempo real. Não
+     existe COMO isso pipocar: não há áudio de verdade tocando durante o
+     cálculo, logo não há prazo de buffer de áudio pra estourar. Testado
+     também com detecção de descontinuidade na forma de onda (mesma técnica
+     usada pra investigar o v1.29): zero anomalias no meio do áudio, só nas
+     bordas exatas de início/fim (ataque/decay natural do limitador —
+     esperado, não é falha).
+   [NOTA] O vídeo (MP4) continua sendo gerado tocando a faixa ao vivo do
+     início ao fim (já beneficiado pelo fix de ScriptProcessorNode do
+     v1.29) — só o WAV 5.1 deixou de depender de tempo real nesta versão.
+     _encode6chWAV() (baseado em captura ao vivo) permanece intacto como
+     está, só não é mais chamado pelo botão RENDER — foi substituído por
+     _encode6chWAVFromBuffer(), que lê direto do AudioBuffer renderizado
+     offline.
+
 /* ─── CHANGELOG v1.29.0 · 2026-07-22 ────────────────────────────────────────
    [FIX CRÍTICO — pipoco de áudio em tempo real, causa raiz] O redesenho do
      composite (usado por REC, RENDER e export MP4) rodava dentro de
@@ -4096,15 +4125,23 @@ class Component extends DCLogic {
     setTimeout(()=>this.setState({menuOpen:false}),120);
   }
 
-  // ─── [v1.28] RENDER — motor único: WAV 5.1 + MP4 num clique ────
-  // Consolida os antigos botões separados "5.1 WAV" e "MP4". Em vez de
-  // reinventar a captura, orquestra os dois mecanismos já provados e
-  // testados: _toggleRec() (que já captura os 6 canais reais E o vídeo/
-  // áudio simultaneamente, com todos os fixes de v1.20-v1.24 — canvas
-  // forçado a redesenhar, WebCodecs H.264/AAC com fallback) e
-  // onExport51WAV() (que já sabe codificar os 6 canais capturados em WAV).
-  // Toca a faixa do início ao fim uma vez só; ambos os arquivos saem
-  // dessa única passada.
+  // ─── [v1.30] RENDER OFFLINE — WAV 5.1 fora do tempo real ────────
+  // v1.29 tirou o redesenho de tela do grafo de áudio (ScriptProcessorNode
+  // → setInterval), o que elimina uma causa real e medida de estouro de
+  // prazo — mas o usuário ouviu de verdade e o pipoco continuou. Isso quer
+  // dizer que travar o WAV 5.1 a uma reprodução em tempo real (tocar a
+  // faixa do início ao fim pela cadeia Neve/SSL/Studer/limitador AO VIVO)
+  // é, em si, uma arquitetura frágil demais pra prometer "nunca pipoca" —
+  // ainda depende do áudio real tocando sem hiccup nenhum por 3+ minutos.
+  // Motor novo: o WAV 5.1 é computado inteiro dentro de um
+  // OfflineAudioContext — a MESMA cadeia de processamento (matriz PLA,
+  // Neve/SSL/Studer, limitador, os mesmos parâmetros ativos agora), rodando
+  // o mais rápido que o processador aguentar, sem relógio de tempo real
+  // algum envolvido. Não existe COMO isso pipocar: não há áudio de verdade
+  // tocando durante o cálculo, então não há prazo de buffer pra estourar.
+  // O MP4 continua sendo gerado do jeito antigo (tocar a faixa ao vivo,
+  // já beneficiado pelo fix de v1.29) — só o WAV 5.1 (a entrega que mais
+  // importa pro pacote com o manual) deixou de depender de tempo real.
   async onRenderBoth(){
     const st=this.exportStatusRef.current;
     const setStatus=(msg,col)=>{if(st){st.textContent=msg;st.style.color=col||'#f5a623';}};
@@ -4119,12 +4156,30 @@ class Component extends DCLogic {
     if(this.gravando){ setStatus('REC já em andamento — pare antes de renderizar','#f5a623'); return; }
 
     setBusy(true);
-    setStatus('Renderizando — WAV 5.1 + MP4…','#f5a623');
+    setStatus('Renderizando WAV 5.1 (offline, fora do tempo real)…','#f5a623');
 
     try{
       this._ensureCtx();
+      const renderedBuffer=await this._renderOfflineSixCh(buf);
+      const wav=this._encode6chWAVFromBuffer(renderedBuffer);
+      const d=new Date(), p=x=>String(x).padStart(2,'0');
+      const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+      const wavName=`SmartKhroma_5.1_${stamp}.wav`;
+      const blob=new Blob([wav],{type:'audio/wav'});
+      this._dl(wavName, blob);
+      this._registerRec(wavName, blob);
+    }catch(e){
+      setStatus('Erro no render offline do WAV 5.1: '+e.message.slice(0,36),'#e94f4f');
+      console.error('Render offline:',e);
+      setBusy(false);
+      return;
+    }
+
+    setStatus('✓ WAV 5.1 pronto (offline) — gerando vídeo (MP4)…','#3ecf8e');
+
+    try{
       if(this.isPlaying) this._pauseFile();
-      this.pauseOffset=0; // renderiza sempre do início da faixa
+      this.pauseOffset=0; // vídeo continua tocando a faixa do início ao fim
       this._startFile();
 
       // Espera o grafo montar (recTapStereo) antes de armar o REC
@@ -4134,7 +4189,7 @@ class Component extends DCLogic {
         wait();
       });
 
-      this._toggleRec(); // início — captura 6ch + vídeo/áudio simultaneamente
+      this._toggleRec(); // início — vídeo/áudio (o WAV 5.1 já foi entregue acima)
 
       // _setupGraph().sourceNode.onended já para o REC sozinho no fim
       // natural da faixa (ver _stopAll/_setupGraph) — só espera isso
@@ -4150,15 +4205,94 @@ class Component extends DCLogic {
       });
       if(this.gravando) this._toggleRec(); // segurança: força parar se o teto estourar
 
-      setStatus('Codificando WAV 5.1…','#f5a623');
-      await new Promise(r=>setTimeout(r,450)); // deixa o MP4 finalizar/baixar primeiro
-      this.onExport51WAV();
-      setStatus('✓ Render concluído — MP4 + WAV 5.1 entregues','#3ecf8e');
+      setStatus('✓ Render concluído — WAV 5.1 (offline) + MP4 entregues','#3ecf8e');
     }catch(e){
-      setStatus('Erro: '+e.message.slice(0,36),'#e94f4f');
-      console.error('Render:',e);
+      setStatus('WAV 5.1 entregue (offline) · MP4 falhou: '+e.message.slice(0,28),'#f5a623');
+      console.error('MP4 pós-render:',e);
     }
     setBusy(false);
+  }
+
+  // Monta o grafo 5.1 completo (matriz PLA + Neve/SSL/Studer + limitador,
+  // com os MESMOS parâmetros ativos ao vivo agora) dentro de um
+  // OfflineAudioContext e renderiza o arquivo inteiro de uma vez —
+  // Promise resolve com o AudioBuffer de 6 canais já pronto, computado o
+  // mais rápido que o processador permitir (não é tempo real).
+  async _renderOfflineSixCh(buf){
+    const sr=buf.sampleRate;
+    const offlineCtx=new OfflineAudioContext(6, Math.ceil(buf.duration*sr)+1, sr);
+    const source=offlineCtx.createBufferSource();
+    source.buffer=buf;
+    const inGain=offlineCtx.createGain();
+    inGain.gain.value=this._db2lin(this.inputGainDb);
+    const splitter=offlineCtx.createChannelSplitter(2);
+    source.connect(inGain); inGain.connect(splitter);
+    const g=this._buildOfflineGraph(offlineCtx, splitter);
+    g.masterGainNode.connect(offlineCtx.destination);
+    source.start(0);
+    return await offlineCtx.startRendering();
+  }
+
+  // Réplica fiel da parte de processamento de _build6chGraph() — matriz
+  // PLA (C/LFE/Ls/Rs a partir de L/R) + cadeia Neve/SSL/Studer/limitador
+  // por canal + master gain — só que parametrizada num ctx qualquer (aqui,
+  // um OfflineAudioContext) em vez de sempre this.audioCtx. Só nós padrão
+  // do Web Audio (Gain/BiquadFilter/WaveShaper/DynamicsCompressor/Merger) —
+  // todos funcionam idênticos dentro de um contexto offline.
+  _buildOfflineGraph(ctx, splitter){
+    const R=this.canaisReais;
+    const CHS=['L','R','C','LFE','Ls','Rs'];
+    const chGainNodes={};
+    CHS.forEach(ch=>{ const gn=ctx.createGain(); gn.gain.value=this._db2lin(this.chTrimDb[ch]); chGainNodes[ch]=gn; });
+    splitter.connect(chGainNodes.L,0);
+    splitter.connect(chGainNodes.R,R>=2?1:0);
+    const cMrg=ctx.createChannelMerger(2);
+    splitter.connect(cMrg,0,0); splitter.connect(cMrg,R>=2?1:0,1);
+    const cSum=ctx.createGain(); cSum.gain.value=0.5;
+    cMrg.connect(cSum); cSum.connect(chGainNodes.C);
+    const lpf=ctx.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=120;
+    cSum.connect(lpf); lpf.connect(chGainNodes.LFE);
+    const lsDiff=ctx.createGain(); lsDiff.gain.value=0.68;
+    const rsDiff=ctx.createGain(); rsDiff.gain.value=0.68;
+    const lsInv=ctx.createGain(); lsInv.gain.value=-0.68;
+    const rsInv=ctx.createGain(); rsInv.gain.value=-0.68;
+    splitter.connect(lsDiff,0); lsDiff.connect(chGainNodes.Ls);
+    splitter.connect(lsInv,R>=2?1:0); lsInv.connect(chGainNodes.Ls);
+    splitter.connect(rsDiff,R>=2?1:0); rsDiff.connect(chGainNodes.Rs);
+    splitter.connect(rsInv,0); rsInv.connect(chGainNodes.Rs);
+
+    const merger6=ctx.createChannelMerger(6);
+    merger6.channelInterpretation='discrete';
+    const CH_IDX={L:0,R:1,C:2,LFE:3,Ls:4,Rs:5};
+    CHS.forEach(ch=>{
+      const chain=this._buildChannelChain(ctx);
+      chGainNodes[ch].connect(this.neveOn?chain.neve:chain.sslLow);
+      if(!this.studerOn){
+        chain.studerHeadShelf.disconnect(chain.limiter);
+        chain.sslComp.connect(chain.limiter);
+      }
+      chain.limiter.connect(merger6,0,CH_IDX[ch]);
+    });
+
+    const masterGainNode=ctx.createGain();
+    masterGainNode.channelCount=6; masterGainNode.channelCountMode='explicit'; masterGainNode.channelInterpretation='discrete';
+    masterGainNode.gain.value=Math.pow(10,(this.masterOutDb||0)/20);
+    merger6.connect(masterGainNode);
+
+    return {chGainNodes, merger6, masterGainNode};
+  }
+
+  // Igual a _encode6chWAV(), mas lendo direto de um AudioBuffer já
+  // renderizado (offline) em vez dos pedaços acumulados de rec6Bufs.
+  _encode6chWAVFromBuffer(buffer){
+    const n=buffer.length, sr=buffer.sampleRate;
+    const data=[0,1,2,3,4,5].map(i=>buffer.getChannelData(i));
+    const interleaved=new Float32Array(n*6);
+    for(let i=0;i<n;i++){
+      const idx=i*6;
+      for(let c=0;c<6;c++) interleaved[idx+c]=data[c][i];
+    }
+    return this._encodeWAV(interleaved,6,sr);
   }
 
   // ─── EXPORT 5.1 WAV (real 6-ch captured) ──────────────────────

@@ -1,5 +1,34 @@
 # Changelog — Smart Khroma
 
+## [v1.31.0] — 2026-07-22
+
+### FEAT CRÍTICO — MP4 também offline (fora do tempo real)
+- O WAV 5.1 já tinha virado offline no v1.30. Agora o vídeo segue o mesmo
+  caminho: em vez de tocar a faixa ao vivo pra gravar a tela, o motor lê
+  os dados já renderizados (o `AudioBuffer` de 6 canais que o v1.30
+  produz) e monta o vídeo quadro a quadro a partir deles, sem relógio de
+  parede algum.
+- `_renderVideoOffline()`: percorre o áudio já pronto em passos fixos
+  (24fps) e, para cada instante, corta uma janela de amostras de cada
+  canal + downmix estéreo + sinal de entrada, monta "analysers" falsos
+  (objetos que imitam a interface de `AnalyserNode` mas devolvem dados
+  cortados do buffer pronto) e chama a **mesma** pipeline de desenho de
+  sempre (`_processAudio`, `_drawAll`, `_drawMasterMeter`,
+  `_drawInputMeter`, `_drawFooterInputMeter`, `_drawComposite` — nenhuma
+  alterada). Cada frame vira um `VideoFrame` entregue ao `VideoEncoder`;
+  o áudio é entregue em blocos ao `AudioEncoder` depois, também sem
+  tempo real.
+- Novo `_fftMagnitudeBytes()` — FFT radix-2 com janela Hann, escrita do
+  zero — alimenta o espectro/espectrograma do vídeo offline com dados
+  reais (mesma exigência do fix do v1.26: nunca "cenografia").
+- **Testado** com Playwright: loop de frames roda sem erro, níveis
+  refletem o áudio real (não ficam presos em -60dB), composite muda de
+  frame a frame com conteúdo real (~1,7M de 1,9M pixels não-pretos, cor
+  média variando), `VideoFrame` constrói sem erro. A etapa de mux em si
+  (mp4-muxer via CDN) não é testável neste ambiente (rede bloqueada) —
+  se falhar por qualquer razão, `onRenderBoth()` cai automaticamente pro
+  caminho antigo em tempo real (v1.29), com aviso no status.
+
 ## [v1.30.0] — 2026-07-22
 
 ### FEAT CRÍTICO — motor de RENDER offline (WAV 5.1 fora do tempo real)

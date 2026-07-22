@@ -3,7 +3,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | v1.30.0 |
+| Versão | v1.31.0 |
 | Família | Smart Suite · Estúdio Plá |
 | Tipo | PWA |
 | Deploy | Netlify · HTTPS |

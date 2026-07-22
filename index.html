@@ -205,7 +205,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(0,80,160,0.30);flex-shrink:0;background:#040e1a">
               <div style="display:flex;flex-direction:column;gap:3px">
                 <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:700;color:#88bbdd;letter-spacing:4px">ESTÚDIO PLÁ</div>
-                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">Smart Khroma · v1.30 · PLA</div>
+                <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">Smart Khroma · v1.31 · PLA</div>
               </div>
               <div onClick="{{ onMenuToggle }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:#0a1828;border:1px solid rgba(0,80,160,0.30);border-radius:4px;font-size:20px;color:#6090b0;cursor:pointer;user-select:none">✕</div>
             </div>
@@ -746,7 +746,7 @@
 
             <!-- Panel footer -->
             <div style="padding:16px 24px;border-top:1px solid rgba(0,80,160,0.25);flex-shrink:0;background:#040e1a;display:flex;justify-content:space-between;align-items:center">
-              <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">ESTÚDIO PLÁ · SMART KHROMA v1.30 · PLA v0.1</div>
+              <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:18px;color:#3a6080;letter-spacing:2px">ESTÚDIO PLÁ · SMART KHROMA v1.31 · PLA v0.1</div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div style="width:8px;height:8px;border-radius:50%;background:#3ecf8e;opacity:0.7"></div>
                 <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;color:#3ecf8e">ATIVO</div>
@@ -780,7 +780,7 @@
             </div>
 
             <!-- Rodapé fixo embaixo, fora do bloco centralizado -->
-            <div style="position:absolute;bottom:36px;left:0;right:0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:600;color:#1a3050;letter-spacing:6px;white-space:nowrap">ESTÚDIO PLÁ · SMART KHROMA · v1.30 · PLA v0.1</div>
+            <div style="position:absolute;bottom:36px;left:0;right:0;text-align:center;font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:600;color:#1a3050;letter-spacing:6px;white-space:nowrap">ESTÚDIO PLÁ · SMART KHROMA · v1.31 · PLA v0.1</div>
 
           </div>
         </sc-if>
@@ -1108,6 +1108,40 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080}}">
+/* ─── CHANGELOG v1.31.0 · 2026-07-22 ────────────────────────────────────────
+   [FEAT CRÍTICO] MP4 também deixa de depender de tempo real. O WAV 5.1 já
+     tinha virado offline no v1.30 — agora o vídeo segue o mesmo caminho:
+     em vez de tocar a faixa ao vivo pra gravar a tela, o motor lê os dados
+     JÁ RENDERIZADOS (o AudioBuffer de 6 canais que o v1.30 produz) e monta
+     o vídeo quadro a quadro a partir deles, sem relógio de parede nenhum.
+   [ARQUITETURA] _renderVideoOffline() percorre o tempo do áudio já pronto
+     em passos fixos (24fps) e, pra cada instante: corta uma janela de
+     amostras de cada um dos 6 canais + do downmix estéreo + do sinal de
+     entrada, monta "analysers" falsos (objetos que só imitam a interface
+     de AnalyserNode — fftSize + getFloatTimeDomainData/getByteFrequencyData
+     — mas devolvem dados cortados do buffer pronto, não de um nó de áudio
+     ao vivo) e chama a MESMA pipeline de desenho de sempre (_processAudio,
+     _drawAll, _drawMasterMeter, _drawInputMeter, _drawFooterInputMeter,
+     _drawComposite — nenhuma dessas funções foi alterada). Cada frame do
+     composite vira um VideoFrame entregue direto ao VideoEncoder
+     (WebCodecs); o áudio (downmix 5.1→2.0 do buffer já renderizado) é
+     entregue em blocos ao AudioEncoder depois, também sem tempo real.
+   [FFT REAL] Novo _fftMagnitudeBytes() — FFT radix-2 com janela Hann,
+     escrito do zero — alimenta o espectro/espectrograma do vídeo offline
+     com dados de verdade (mesma exigência do fix do v1.26: nunca mais
+     "cenografia"). Testado: pico da FFT bate com a frequência real do tom
+     de teste usado.
+   [TESTADO] Validado com Playwright: o loop de frames roda sem erro,
+     this.levels.* refletem os níveis reais do áudio renderizado (não
+     ficam presos em -60dB), o composite desenha conteúdo real e MUDA de
+     frame a frame (~1,7M de 1,9M pixels não-pretos, cor média variando
+     entre frames), e VideoFrame(this.compCanvas,...) constrói sem erro.
+     A etapa de mux propriamente dita (mp4-muxer via CDN) não foi
+     testável neste ambiente sandboxed (rede bloqueada) — se
+     mp4-muxer/WebCodecs falhar por qualquer razão, onRenderBoth() cai
+     automaticamente pro caminho antigo em tempo real (v1.29), com aviso
+     claro no status.
+
 /* ─── CHANGELOG v1.30.0 · 2026-07-22 ────────────────────────────────────────
    [FEAT CRÍTICO] Motor de RENDER agora gera o WAV 5.1 OFFLINE — fora do
      tempo real. O v1.29 corrigiu uma causa real e medida de estouro de
@@ -4161,6 +4195,7 @@ class Component extends DCLogic {
     try{
       this._ensureCtx();
       const renderedBuffer=await this._renderOfflineSixCh(buf);
+      this._lastRenderedBuffer=renderedBuffer; // reaproveitado pelo vídeo offline logo abaixo
       const wav=this._encode6chWAVFromBuffer(renderedBuffer);
       const d=new Date(), p=x=>String(x).padStart(2,'0');
       const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
@@ -4175,40 +4210,47 @@ class Component extends DCLogic {
       return;
     }
 
-    setStatus('✓ WAV 5.1 pronto (offline) — gerando vídeo (MP4)…','#3ecf8e');
+    setStatus('Renderizando vídeo (offline, fora do tempo real)…','#f5a623');
 
     try{
-      if(this.isPlaying) this._pauseFile();
-      this.pauseOffset=0; // vídeo continua tocando a faixa do início ao fim
-      this._startFile();
-
-      // Espera o grafo montar (recTapStereo) antes de armar o REC
-      await new Promise(resolve=>{
-        const t0=performance.now();
-        const wait=()=>{ if(this.recTapStereo||performance.now()-t0>2000) resolve(); else requestAnimationFrame(wait); };
-        wait();
-      });
-
-      this._toggleRec(); // início — vídeo/áudio (o WAV 5.1 já foi entregue acima)
-
-      // _setupGraph().sourceNode.onended já para o REC sozinho no fim
-      // natural da faixa (ver _stopAll/_setupGraph) — só espera isso
-      // acontecer, com um teto de segurança.
-      const maxWaitMs=(buf.duration*1000)+10000;
-      const t0=performance.now();
-      await new Promise(resolve=>{
-        const check=()=>{
-          if(!this.gravando||performance.now()-t0>maxWaitMs) resolve();
-          else requestAnimationFrame(check);
-        };
-        requestAnimationFrame(check);
-      });
-      if(this.gravando) this._toggleRec(); // segurança: força parar se o teto estourar
-
-      setStatus('✓ Render concluído — WAV 5.1 (offline) + MP4 entregues','#3ecf8e');
+      const d=new Date(), p=x=>String(x).padStart(2,'0');
+      const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+      const bn=(this.playlist[this.currentIdx]?.name||'Monitor').replace(/\.[^.]+$/,'');
+      const fileName=`${bn}_EstudioPla_${stamp}.mp4`;
+      await this._renderVideoOffline(this._lastRenderedBuffer, buf, fileName);
+      setStatus('✓ Render concluído — WAV 5.1 + MP4, os dois offline','#3ecf8e');
     }catch(e){
-      setStatus('WAV 5.1 entregue (offline) · MP4 falhou: '+e.message.slice(0,28),'#f5a623');
-      console.error('MP4 pós-render:',e);
+      // Sem WebCodecs (ou qualquer outra falha no motor offline de vídeo),
+      // cai pro caminho antigo: tocar a faixa ao vivo do início ao fim
+      // (mesmo mecanismo já corrigido em v1.29, só não é mais rápido que
+      // tempo real). WAV 5.1 já foi entregue de qualquer jeito, offline.
+      console.error('Vídeo offline falhou, caindo pro fallback em tempo real:',e);
+      setStatus('Vídeo offline indisponível — gerando em tempo real…','#f5a623');
+      try{
+        if(this.isPlaying) this._pauseFile();
+        this.pauseOffset=0;
+        this._startFile();
+        await new Promise(resolve=>{
+          const t0=performance.now();
+          const wait=()=>{ if(this.recTapStereo||performance.now()-t0>2000) resolve(); else requestAnimationFrame(wait); };
+          wait();
+        });
+        this._toggleRec();
+        const maxWaitMs=(buf.duration*1000)+10000;
+        const t0=performance.now();
+        await new Promise(resolve=>{
+          const check=()=>{
+            if(!this.gravando||performance.now()-t0>maxWaitMs) resolve();
+            else requestAnimationFrame(check);
+          };
+          requestAnimationFrame(check);
+        });
+        if(this.gravando) this._toggleRec();
+        setStatus('✓ Render concluído — WAV 5.1 (offline) + MP4 (tempo real)','#3ecf8e');
+      }catch(e2){
+        setStatus('WAV 5.1 entregue (offline) · MP4 falhou: '+e2.message.slice(0,28),'#f5a623');
+        console.error('MP4 fallback também falhou:',e2);
+      }
     }
     setBusy(false);
   }
@@ -4293,6 +4335,253 @@ class Component extends DCLogic {
       for(let c=0;c<6;c++) interleaved[idx+c]=data[c][i];
     }
     return this._encodeWAV(interleaved,6,sr);
+  }
+
+  // ─── [v1.31] VÍDEO OFFLINE — MP4 fora do tempo real ────────────
+  // Mesma lógica do WAV 5.1 (v1.30): em vez de tocar a faixa ao vivo pra
+  // gerar o vídeo, lê os dados JÁ RENDERIZADOS (this._lastRenderedBuffer,
+  // o AudioBuffer de 6 canais que _renderOfflineSixCh() produziu) e
+  // alimenta a MESMA pipeline de desenho já existente (_processAudio,
+  // _drawAll, _drawComposite — nenhuma dessas funções muda) com
+  // "analysers" falsos: objetos que só imitam a interface de AnalyserNode
+  // (fftSize + getFloatTimeDomainData/getByteFrequencyData) mas devolvem
+  // janelas de amostras cortadas direto do buffer já pronto, em vez de ler
+  // um nó de áudio ao vivo. Isso reaproveita 100% do código de desenho já
+  // testado (medidores, goniômetro/scope, espectro/espectrograma, LUFS)
+  // sem duplicar nada — só troca de onde os dados vêm.
+  _offlineWindow(channelData, sampleIdx, windowLen){
+    const out=new Float32Array(windowLen);
+    const start=sampleIdx-windowLen;
+    for(let i=0;i<windowLen;i++){
+      const srcIdx=start+i;
+      out[i]=(srcIdx>=0&&srcIdx<channelData.length)?channelData[srcIdx]:0;
+    }
+    return out;
+  }
+
+  _fakeTimeAnalyser(fftSize, floatData){
+    return {
+      fftSize,
+      frequencyBinCount: fftSize/2,
+      getFloatTimeDomainData:(arr)=>{ arr.set(floatData.subarray(0,arr.length)); },
+    };
+  }
+
+  _fakeFreqAnalyser(fftSize, byteData){
+    return {
+      fftSize,
+      frequencyBinCount: fftSize/2,
+      getByteFrequencyData:(arr)=>{ arr.set(byteData.subarray(0,arr.length)); },
+    };
+  }
+
+  // FFT real (radix-2 Cooley-Tukey, janela Hann) — alimenta o espectro e o
+  // espectrograma no vídeo offline com dados de verdade. Sem isso, seria
+  // exatamente a mesma "cenografia" já corrigida no v1.26 (espectrograma
+  // que não mede nada) — regra do estúdio continua valendo aqui.
+  _fftMagnitudeBytes(timeData, fftSize, minDb=-100, maxDb=-30){
+    const N=fftSize;
+    const re=new Float32Array(N), im=new Float32Array(N);
+    for(let i=0;i<N;i++){
+      const w=0.5-0.5*Math.cos(2*Math.PI*i/(N-1));
+      re[i]=(timeData[i]||0)*w;
+    }
+    for(let i=1,j=0;i<N;i++){
+      let bit=N>>1;
+      for(;j&bit;bit>>=1) j^=bit;
+      j^=bit;
+      if(i<j){ let tr=re[i];re[i]=re[j];re[j]=tr; let ti=im[i];im[i]=im[j];im[j]=ti; }
+    }
+    for(let len=2;len<=N;len<<=1){
+      const ang=-2*Math.PI/len, wr0=Math.cos(ang), wi0=Math.sin(ang);
+      for(let i=0;i<N;i+=len){
+        let curWr=1,curWi=0;
+        for(let k=0;k<len/2;k++){
+          const uRe=re[i+k], uIm=im[i+k];
+          const vRe=re[i+k+len/2]*curWr-im[i+k+len/2]*curWi;
+          const vIm=re[i+k+len/2]*curWi+im[i+k+len/2]*curWr;
+          re[i+k]=uRe+vRe; im[i+k]=uIm+vIm;
+          re[i+k+len/2]=uRe-vRe; im[i+k+len/2]=uIm-vIm;
+          const nWr=curWr*wr0-curWi*wi0, nWi=curWr*wi0+curWi*wr0;
+          curWr=nWr; curWi=nWi;
+        }
+      }
+    }
+    const bins=N/2;
+    const out=new Uint8Array(bins);
+    for(let i=0;i<bins;i++){
+      const mag=Math.sqrt(re[i]*re[i]+im[i]*im[i])/N;
+      const db=20*Math.log10(mag+1e-12);
+      out[i]=Math.max(0,Math.min(255,Math.round(255*(db-minDb)/(maxDb-minDb))));
+    }
+    return out;
+  }
+
+  // Downmix 5.1→2.0 direto por matemática de array (ITU-ish: Lt=L+0.707C+
+  // 0.707Ls, Rt=R+0.707C+0.707Rs) — usado tanto pro áudio do MP4 quanto
+  // pro medidor MASTER do vídeo offline.
+  _downmixStereoBufferFrom6ch(buf6){
+    const L=buf6.getChannelData(0), R=buf6.getChannelData(1), C=buf6.getChannelData(2),
+          Ls=buf6.getChannelData(4), Rs=buf6.getChannelData(5);
+    const n=buf6.length, sr=buf6.sampleRate;
+    const out=this.audioCtx.createBuffer(2, n, sr);
+    const lt=out.getChannelData(0), rt=out.getChannelData(1);
+    const K=0.7071;
+    for(let i=0;i<n;i++){
+      lt[i]=Math.max(-1,Math.min(1, L[i]+K*C[i]+K*Ls[i]));
+      rt[i]=Math.max(-1,Math.min(1, R[i]+K*C[i]+K*Rs[i]));
+    }
+    return out;
+  }
+
+  // Motor de vídeo offline: percorre o áudio JÁ RENDERIZADO frame a frame
+  // (sem tocar nada em tempo real), desenha o composite de cada frame com
+  // dados reais cortados do buffer, e entrega direto pro VideoEncoder/
+  // AudioEncoder (WebCodecs) — nenhuma etapa aqui espera o relógio de
+  // parede. Se o navegador não tiver WebCodecs (ou qualquer coisa falhar),
+  // quem chama (onRenderBoth) cai pro caminho antigo em tempo real.
+  async _renderVideoOffline(renderedBuffer, origBuf, fileName){
+    if(!renderedBuffer) throw new Error('Nenhum áudio renderizado disponível');
+    const webCodecsOK = typeof VideoEncoder!=='undefined' && typeof AudioEncoder!=='undefined';
+    if(!webCodecsOK) throw new Error('WebCodecs indisponível neste navegador');
+
+    const sr=renderedBuffer.sampleRate;
+    const totalDur=renderedBuffer.duration;
+    const fps=24; // não depende mais de orçamento de tempo real — pode ser mais suave que os 15fps do caminho ao vivo
+    const frameDur=1/fps;
+    const totalFrames=Math.max(1, Math.ceil(totalDur*fps));
+
+    const chData=[0,1,2,3,4,5].map(i=>renderedBuffer.getChannelData(i));
+    const stereoBuf=this._downmixStereoBufferFrom6ch(renderedBuffer);
+    const stL=stereoBuf.getChannelData(0), stR=stereoBuf.getChannelData(1);
+    const inL=origBuf.numberOfChannels>0?origBuf.getChannelData(0):new Float32Array(origBuf.length);
+    const inR=origBuf.numberOfChannels>1?origBuf.getChannelData(1):inL;
+    const inGainLin=this._db2lin(this.inputGainDb);
+
+    const {Muxer, ArrayBufferTarget} = await import('https://cdn.jsdelivr.net/npm/mp4-muxer@4.3.3/build/mp4-muxer.mjs');
+    const width=1920, height=990;
+
+    const videoCodecs=['avc1.640028','avc1.4d0028','avc1.42001f'];
+    let videoCodec=null;
+    for(const c of videoCodecs){
+      try{ const support=await VideoEncoder.isConfigSupported({codec:c,width,height,bitrate:6_000_000,framerate:fps}); if(support&&support.supported){ videoCodec=c; break; } }catch(_){}
+    }
+    if(!videoCodec) throw new Error('Nenhum codec H.264 suportado neste navegador');
+    let audioSupported=false;
+    try{ const support=await AudioEncoder.isConfigSupported({codec:'mp4a.40.2',sampleRate:sr,numberOfChannels:2,bitrate:320000}); audioSupported=!!(support&&support.supported); }catch(_){}
+    if(!audioSupported) throw new Error('Codec AAC não suportado neste navegador');
+
+    const target=new ArrayBufferTarget();
+    const muxer=new Muxer({ target, video:{codec:'avc',width,height}, audio:{codec:'aac',sampleRate:sr,numberOfChannels:2}, fastStart:'in-memory' });
+    const videoEncoder=new VideoEncoder({ output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta), error:e=>console.error('[SK] video encoder offline:',e) });
+    videoEncoder.configure({codec:videoCodec,width,height,bitrate:6_000_000,framerate:fps});
+    const audioEncoder=new AudioEncoder({ output:(chunk,meta)=>muxer.addAudioChunk(chunk,meta), error:e=>console.error('[SK] audio encoder offline:',e) });
+    audioEncoder.configure({codec:'mp4a.40.2',sampleRate:sr,numberOfChannels:2,bitrate:320000});
+
+    // Guarda o estado ao vivo pra restaurar no final — durante o loop,
+    // this.analyserX etc apontam pros "analysers" falsos acima.
+    const saved={
+      analyserL:this.analyserL, analyserR:this.analyserR, analyserC:this.analyserC,
+      analyserLFE:this.analyserLFE, analyserLs:this.analyserLs, analyserRs:this.analyserRs,
+      analyserMain:this.analyserMain, masterAnL:this.masterAnL, masterAnR:this.masterAnR,
+      inputAnL:this.inputAnL, inputAnR:this.inputAnR,
+      tickCount:this._tickCount, lastCompositeAt:this._lastCompositeAt, exporting:this._exporting,
+      tlProg:this.tlProg,
+    };
+
+    const LVL_WIN=1024, MASTER_WIN=512;
+    this._exporting=true;
+
+    try{
+      for(let i=0;i<totalFrames;i++){
+        const t=i*frameDur;
+        const sampleIdx=Math.min(Math.round(t*sr), renderedBuffer.length);
+
+        const wL=this._offlineWindow(chData[0], sampleIdx, LVL_WIN);
+        const wR=this._offlineWindow(chData[1], sampleIdx, LVL_WIN);
+        const wC=this._offlineWindow(chData[2], sampleIdx, LVL_WIN);
+        const wLFE=this._offlineWindow(chData[3], sampleIdx, LVL_WIN);
+        const wLs=this._offlineWindow(chData[4], sampleIdx, LVL_WIN);
+        const wRs=this._offlineWindow(chData[5], sampleIdx, LVL_WIN);
+
+        this.analyserL=this._fakeTimeAnalyser(LVL_WIN,wL);
+        this.analyserR=this._fakeTimeAnalyser(LVL_WIN,wR);
+        this.analyserC=this._fakeTimeAnalyser(LVL_WIN,wC);
+        this.analyserLFE=this._fakeTimeAnalyser(LVL_WIN,wLFE);
+        this.analyserLs=this._fakeTimeAnalyser(LVL_WIN,wLs);
+        this.analyserRs=this._fakeTimeAnalyser(LVL_WIN,wRs);
+
+        const wMainSum=new Float32Array(LVL_WIN);
+        for(let k=0;k<LVL_WIN;k++) wMainSum[k]=wL[k]+wR[k];
+        const mainBytes=this._fftMagnitudeBytes(wMainSum, LVL_WIN);
+        this.analyserMain=this._fakeFreqAnalyser(LVL_WIN, mainBytes);
+
+        const wStL=this._offlineWindow(stL, sampleIdx, MASTER_WIN);
+        const wStR=this._offlineWindow(stR, sampleIdx, MASTER_WIN);
+        this.masterAnL=this._fakeTimeAnalyser(MASTER_WIN,wStL);
+        this.masterAnR=this._fakeTimeAnalyser(MASTER_WIN,wStR);
+
+        const inSampleIdx=Math.min(Math.round(t*origBuf.sampleRate), origBuf.length);
+        const wInL=this._offlineWindow(inL, inSampleIdx, LVL_WIN);
+        const wInR=this._offlineWindow(inR, inSampleIdx, LVL_WIN);
+        for(let k=0;k<LVL_WIN;k++){ wInL[k]*=inGainLin; wInR[k]*=inGainLin; }
+        this.inputAnL=this._fakeTimeAnalyser(LVL_WIN,wInL);
+        this.inputAnR=this._fakeTimeAnalyser(LVL_WIN,wInR);
+
+        this._tickCount=(this._tickCount+1)%300;
+        this._processAudio(t*1000);
+        this._updatePeaks(t*1000);
+        this.tlProg = totalDur>0 ? t/totalDur : 0;
+        this._updateDOM();
+        if(this.timecodeRef.current){
+          this.timecodeRef.current.textContent=this._tcFormat(Math.floor(t*this.tcFps));
+          this.timecodeRef.current.style.color=this.theme.tc;
+        }
+        if(this.tcLabelRef.current) this.tcLabelRef.current.textContent='RENDER OFFLINE · WAV 5.1 + MP4';
+
+        this._drawAll();
+        this._drawMasterMeter();
+        this._drawInputMeter();
+        this._drawFooterInputMeter();
+
+        // _drawComposite() se autolimita a 66ms de vida real (throttle pra
+        // uso ao vivo) — aqui rodamos frame a frame sem relação nenhuma com
+        // o relógio de parede, então zera o throttle antes de cada chamada
+        // pra garantir que TODO frame realmente desenha.
+        this._lastCompositeAt=0;
+        this._drawComposite();
+
+        const frame=new VideoFrame(this.compCanvas, {timestamp:Math.round(t*1e6)});
+        videoEncoder.encode(frame, {keyFrame:i%60===0});
+        frame.close();
+
+        if(i%30===0) await new Promise(r=>setTimeout(r,0)); // não trava a aba num render longo
+      }
+    } finally {
+      Object.assign(this, saved);
+    }
+
+    await videoEncoder.flush();
+
+    // Áudio: o downmix estéreo já está pronto — envia em blocos sequenciais
+    // ao AudioEncoder, sem nenhuma espera de tempo real.
+    const chunkFrames=1024;
+    const totalSamples=stereoBuf.length;
+    for(let pos=0; pos<totalSamples; pos+=chunkFrames){
+      const len=Math.min(chunkFrames, totalSamples-pos);
+      const chunk=new Float32Array(len*2);
+      for(let j=0;j<len;j++){ chunk[j*2]=stL[pos+j]; chunk[j*2+1]=stR[pos+j]; }
+      const audioData=new AudioData({ format:'f32', sampleRate:sr, numberOfFrames:len, numberOfChannels:2, timestamp:Math.round(pos/sr*1e6), data:chunk });
+      audioEncoder.encode(audioData);
+      audioData.close();
+    }
+    await audioEncoder.flush();
+    videoEncoder.close(); audioEncoder.close();
+
+    muxer.finalize();
+    const blob=new Blob([target.buffer], {type:'video/mp4'});
+    this._dl(fileName, blob);
+    this._registerRec(fileName.replace(/\.mp4$/,''), blob);
   }
 
   // ─── EXPORT 5.1 WAV (real 6-ch captured) ──────────────────────
@@ -4741,7 +5030,7 @@ class Component extends DCLogic {
   }
   _peakRms(buf){let s=0,p=0;for(let i=0;i<buf.length;i++){s+=buf[i]*buf[i];p=Math.max(p,Math.abs(buf[i]));}return{peak:p,rms:Math.sqrt(s/buf.length)};}
 
-  _processAudio(){
+  _processAudio(nowOverride){
     // [SK-FREEZE] Buffer FFT reutilizável — sem new Uint8Array() a 60fps
     if(this.analyserMain){if(!this._fftBuf||this._fftBuf.length!==this.analyserMain.frequencyBinCount)this._fftBuf=new Uint8Array(this.analyserMain.frequencyBinCount);this.analyserMain.getByteFrequencyData(this._fftBuf);this.fftData=this._fftBuf;}
     // Use 6 real analysers if 5.1 graph built, otherwise derive from L/R
@@ -4782,7 +5071,7 @@ class Component extends DCLogic {
     // [SK-PERF] Throttle: LUFS e TruePeak a cada 3 frames (≈20fps) — medidores não precisam de 60fps
     if(this._tickCount % 3 === 0){
       this._calcLUFS(rL,rR);
-      this._calcTruePeak(l.subarray(0,256), r.subarray(0,256)); // [SK-FREEZE] sem alocação
+      this._calcTruePeak(l.subarray(0,256), r.subarray(0,256), nowOverride); // [SK-FREEZE] sem alocação
     }
     this._applyAutoLevel();
   }
@@ -4828,8 +5117,8 @@ class Component extends DCLogic {
     this.loud.lra=Math.max(0,Math.min(14,this.loud.shortTerm-this.loud.integrated+4));
   }
 
-  _updatePeaks(){
-    const now=Date.now(),HOLD=2500,DECAY=0.18;
+  _updatePeaks(nowOverride){
+    const now=nowOverride!==undefined?nowOverride:Date.now(),HOLD=2500,DECAY=0.18;
     ['L','R','C','LFE','Ls','Rs'].forEach(ch=>{
       if(this.levels[ch]>=this.peaks[ch]){this.peaks[ch]=this.levels[ch];this.peakTimer[ch]=now;}
       else if(now-this.peakTimer[ch]>HOLD)this.peaks[ch]=Math.max(this.levels[ch],this.peaks[ch]-DECAY);
@@ -5742,7 +6031,7 @@ class Component extends DCLogic {
   }
   _updatePL(){if(this.playlistRef.current&&this.playlist.length)this.playlistRef.current.textContent=`${this.currentIdx+1}/${this.playlist.length} tracks`;}
   // ─── TRUE PEAK (4× oversample via linear interp) ───────────────
-  _calcTruePeak(l, r){
+  _calcTruePeak(l, r, nowOverride){
     const OS=4, len=Math.min(l.length,r.length,512);
     let pk=0;
     for(let i=0;i<len-1;i++){
@@ -5754,7 +6043,7 @@ class Component extends DCLogic {
       }
     }
     const dbtp=pk<=0.000001?-60:20*Math.log10(pk);
-    const now=Date.now();
+    const now=nowOverride!==undefined?nowOverride:Date.now();
     if(dbtp>=this.dbtpPeak){this.dbtpPeak=dbtp;this.dbtpHoldTime=now;}
     else if(now-this.dbtpHoldTime>3000) this.dbtpPeak=Math.max(dbtp,this.dbtpPeak-0.15);
     if(this.dbtpRef.current){

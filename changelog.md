@@ -2,20 +2,51 @@
 
 ## [v1.20.0] — 2026-07-22
 
-### FIX CRÍTICO — Exportação MP4 sem vídeo
-- `onExportMP4` tinha dois caminhos: o principal (WebCodecs + mp4-muxer,
-  usado em Chrome/Edge) codificava só o `AudioBuffer` offline — nunca
-  capturava o canvas, então o arquivo `.mp4` baixado não tinha vídeo
-  nenhum. Só o fallback de Safari (MediaRecorder nativo) combinava
-  canvas + áudio corretamente.
-- Reescrito para sempre usar `MediaRecorder` com o stream combinado de
-  `compCanvas.captureStream(30)` + áudio via `MediaStreamDestination` —
-  o mesmo padrão já validado no REC e no PLA Render. Usa MP4 nativo
-  (avc1/mp4a) quando o browser suporta; senão WebM (vp9/vp8+opus),
-  baixado com extensão `.mp4` (todo player abre — é o container, não a
-  extensão, que determina a decodificação).
-- Removida a dependência de `mp4-muxer` via CDN (jsdelivr) — vanilla
-  Web Audio API / MediaRecorder, sem import externo.
+### FIX CRÍTICO — Exportação MP4 sem vídeo (3 causas, todas corrigidas)
+- `onExportMP4` original: caminho principal (WebCodecs + mp4-muxer)
+  codificava só o `AudioBuffer` offline — nunca capturava o canvas, o
+  `.mp4` baixado saía sem vídeo nenhum.
+- 1ª correção: trocou pra `MediaRecorder(canvas+áudio)`, mas tocava por
+  um `AudioBufferSourceNode` independente, desligado da cadeia real
+  (Neve/SSL/Studer) — o vídeo saía com 0 bytes.
+- 2ª correção: passou a tocar pela cadeia real via `_startFile()` e
+  capturar `recTapStereo` — ainda 0 bytes. Causa raiz de verdade:
+  `_drawComposite()` (a função que desenha o canvas 1920×990 exportado)
+  tinha uma trava `if(!this.gravando) return` — só desenhava durante
+  gravação REC. A exportação MP4 nunca liga `this.gravando`, então o
+  canvas ficava sempre preto, não importa o que mais estivesse certo.
+  **Esse mesmo bug afetava o PLA Render** (`onPLARender`), que também
+  nunca liga `this.gravando` — os vídeos por fonograma da playlist
+  saíam pretos há quem sabe quantas versões, mascarado porque o WAV
+  separado sempre saía correto.
+- Correção final: guard de `_drawComposite()` agora aceita
+  `this.gravando || this._exporting || this.state.plaActive`. Export
+  MP4 delega pros mesmos dois caminhos já comprovados do REC
+  (`_startMp4RecWebCodecs` H.264+AAC via WebCodecs, com fallback pra
+  `_startFallbackRec` MediaRecorder nativo/WebM) em vez de reinventar a
+  captura. Testado de ponta a ponta: arquivo exportado confirmado com
+  trilha de vídeo (VP8) E áudio (Opus) reais, frames mostrando a tela
+  de análise de verdade.
+
+### FIX CRÍTICO — Fader MASTER travava o app inteiro ao arrastar
+- O overlay/track do fader usava `onClick="window.SmartKhroma&&..."` e
+  `onPointerDown/Move/Up="window.SmartKhroma&&..."` — strings de JS cru
+  como atributo HTML, em vez do binding de handler do framework
+  (`{{ nomeDoHandler }}`) usado em todo o resto do app. O runtime
+  (React) tentava atribuir essa string como prop de evento e lançava
+  "Minified React error #231" (listener não é function) a cada
+  pointerdown/move/up — trava a interface inteira enquanto o dedo/mouse
+  está sobre o fader. Provavelmente a causa do "trava tudo, não desliga
+  nem funciona" relatado ao vivo. Corrigido pro binding correto +
+  `onPointerCancel` adicionado (solta o dedo fora da tela sem perder o
+  estado do arraste).
+
+### FIX — Legenda do VU de Input nunca aparecia
+- `_buildMeterLegend` rodava uma vez no `componentDidMount`, antes do
+  menu de configurações (montado condicionalmente) existir no DOM —
+  o elemento nunca era encontrado e a legenda ficava vazia pra sempre,
+  mesmo depois de abrir o menu. Chamada movida pra `onMenuToggle`,
+  toda vez que o menu abre.
 
 ### Fader MASTER — grade de loudness target
 - Grade de dB (`+12/+6/0/-6/-10/-20/-40`) ganhou uma segunda coluna no

@@ -983,8 +983,8 @@
             <span ref="{{ dbtpRef }}" style="font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;color:#aad0e8">—</span>
           </div>
           <!-- FADER VERTICAL — aparece ancorado ao MASTER ao tocar, fecha ao clicar fora -->
-          <div id="sk-fader-overlay" style="display:none;position:fixed;inset:0;z-index:9999;touch-action:none" onClick="window.SmartKhroma&&window.SmartKhroma._closeFader()">
-            <div id="sk-fader-inner" style="position:fixed;background:#06111e;border:1px solid rgba(0,140,255,0.35);border-radius:10px;padding:16px 14px 20px;display:flex;flex-direction:row;gap:12px;align-items:stretch;box-shadow:0 8px 40px rgba(0,0,0,0.7);transition:opacity .18s" onClick="event.stopPropagation()">
+          <div id="sk-fader-overlay" style="display:none;position:fixed;inset:0;z-index:9999;touch-action:none" onClick="{{ onFaderOverlayClick }}">
+            <div id="sk-fader-inner" style="position:fixed;background:#06111e;border:1px solid rgba(0,140,255,0.35);border-radius:10px;padding:16px 14px 20px;display:flex;flex-direction:row;gap:12px;align-items:stretch;box-shadow:0 8px 40px rgba(0,0,0,0.7);transition:opacity .18s" onClick="{{ onFaderInnerClick }}">
               <!-- Grade de loudness target — lado oposto à grade de dB -->
               <div id="sk-fader-scale-loud" style="display:flex;flex-direction:column;justify-content:space-between;padding:28px 0 20px;font-family:'Barlow Semi Condensed',sans-serif;font-size:10px;color:#2a4a6a;letter-spacing:0.5px;min-width:44px;text-align:right">
                 <!-- preenchido via JS com os alvos de loudness -->
@@ -993,9 +993,10 @@
               <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
                 <span id="sk-fader-value" style="font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;color:#44aaff;font-weight:700;letter-spacing:1px;white-space:nowrap"></span>
                 <div style="position:relative;width:44px;flex:1;min-height:160px;cursor:pointer" id="sk-fader-track"
-                  onPointerDown="window.SmartKhroma&&window.SmartKhroma._faderTrackDown(event)"
-                  onPointerMove="window.SmartKhroma&&window.SmartKhroma._faderTrackMove(event)"
-                  onPointerUp="window.SmartKhroma&&window.SmartKhroma._faderTrackUp(event)">
+                  onPointerDown="{{ _faderTrackDown }}"
+                  onPointerMove="{{ _faderTrackMove }}"
+                  onPointerUp="{{ _faderTrackUp }}"
+                  onPointerCancel="{{ _faderTrackUp }}">
                   <!-- trilho -->
                   <div style="position:absolute;left:50%;transform:translateX(-50%);top:0;bottom:0;width:8px;background:#0d1e32;border-radius:4px"></div>
                   <!-- fill -->
@@ -1072,13 +1073,27 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080}}">
 /* ─── CHANGELOG v1.20.0 · 2026-07-22 ────────────────────────────────────────
-   [FIX CRÍTICO] Exportação MP4 (onExportMP4) só entregava áudio — o caminho
-     principal (WebCodecs + mp4-muxer) codificava o AudioBuffer offline e
-     nunca capturava o canvas. Reescrito para usar MediaRecorder(canvas +
-     áudio) via captureStream(30) + MediaStreamDestination — o mesmo padrão
-     já usado no REC e no PLA Render. MP4 nativo (avc1/mp4a) quando o
-     browser suporta, senão WebM (vp9/vp8+opus) renomeado .mp4 no download.
-     Removida a dependência externa de mp4-muxer via CDN.
+   [FIX CRÍTICO] Fader MASTER travava o app inteiro ao arrastar — overlay e
+     track usavam onClick/onPointer* com string de JS cru
+     ("window.SmartKhroma&&...") em vez do binding {{ }} do framework.
+     React lançava "Minified React error #231" a cada pointerdown/move/up.
+     Corrigido pro binding correto; onPointerCancel adicionado (soltar o
+     dedo fora da tela não perde o arraste).
+   [FIX CRÍTICO] Exportação MP4 saía sem vídeo (3 causas em cadeia):
+     1) caminho original (WebCodecs+mp4-muxer) só codificava áudio;
+     2) 1ª correção tocava por fonte de áudio solta, desligada da cadeia
+        real — vídeo saía com 0 bytes;
+     3) causa raiz de verdade: _drawComposite() só desenha quando
+        this.gravando (flag do REC) — a exportação nunca liga essa flag,
+        canvas ficava sempre preto. MESMO bug no PLA Render (onPLARender),
+        mascarado porque o WAV separado sempre saía certo.
+     Guard corrigido pra aceitar gravando||_exporting||state.plaActive.
+     Export delega pros dois caminhos já provados do REC (WebCodecs H.264+
+     AAC com fallback pra MediaRecorder/WebM) em vez de reinventar a
+     captura. Testado ponta a ponta: vídeo (VP8) + áudio (Opus) reais.
+   [FIX] Legenda do VU de Input nunca aparecia — _buildMeterLegend rodava
+     no componentDidMount, antes do menu (montagem condicional) existir no
+     DOM. Movida pra onMenuToggle, toda vez que o menu abre.
    [FEAT] Fader MASTER — grade de loudness target no lado oposto à grade de
      dB: -14 Spotify · -16 Stream · -23 EBU · -24 Bcast.
    [FEAT] VU Meter de INPUT (novo) — barra horizontal no menu de Ganho de
@@ -1438,7 +1453,6 @@ class Component extends DCLogic {
       ctx.fillStyle='#000'; ctx.fillRect(0,0,ref.current?ref.current.width:4096,ref.current?ref.current.height:4096);
     });
     setTimeout(()=>{ this._restorePanelWidths(); this._loadProfile(this.operatorName); }, 120);
-    this._buildMeterLegend('sk-input-legend');
     this._startDrawLoop();
     this._exposeAPI();
     setTimeout(()=>this._setTheme(1), 200); // padrão Azul
@@ -1646,8 +1660,15 @@ class Component extends DCLogic {
   }
 
   _drawComposite(){
-    // [SK-FREEZE] Composite é exclusivo para REC — não renderizar fora da gravação
-    if(!this.compCtx||!this.gravando) return;
+    // [SK-FREEZE] Composite roda só durante REC ou export — desenhar esse
+    // canvas 1920×990 em todo frame do app seria desperdício de CPU.
+    // [v1.20 FIX] Guard checava só this.gravando — tanto a exportação MP4
+    // quanto o PLA Render (onPLARender) capturam compCanvas.captureStream()
+    // sem nunca ligar this.gravando, então essa trava descartava toda
+    // chamada e os dois entregavam vídeo sempre preto/vazio, sem ninguém
+    // perceber (o WAV separado do PLA Render sempre saía certo, escondendo
+    // o problema). this._exporting e state.plaActive cobrem os dois casos.
+    if(!this.compCtx||!(this.gravando||this._exporting||this.state.plaActive)) return;
     // [SK-FIX] Captura roda a 30fps (captureStream(30)) — redesenhar a 60fps
     // é gasto em dobro do necessário. Throttle por relógio de verdade
     // (performance.now), não por contagem de frame do requestAnimationFrame:
@@ -2609,7 +2630,17 @@ class Component extends DCLogic {
   _closeFader(){
     const ov = document.getElementById('sk-fader-overlay');
     if(ov) ov.style.display='none';
+    this._faderDragging = false;
   }
+
+  // [v1.20 FIX CRÍTICO] onFaderOverlayClick/onFaderInnerClick — o fader
+  // usava onClick="window.SmartKhroma&&..." (string JS crua) em vez do
+  // binding de handler do framework ({{ }}). O runtime (React) tentava
+  // atribuir essa STRING como prop de evento e lançava
+  // "Minified React error #231" (listener não é function) a cada
+  // pointerdown/move/up — travando a UI inteira ao arrastar o fader.
+  onFaderOverlayClick(){ this._closeFader(); }
+  onFaderInnerClick(e){ e.stopPropagation(); }
 
   _faderUpdateVisual(){
     const val = this._faderGetVal ? this._faderGetVal() : 0;
@@ -3594,7 +3625,11 @@ class Component extends DCLogic {
   onMenuToggle(){
     const opening=!this.state.menuOpen;
     this.setState(s=>({menuOpen:!s.menuOpen}));
-    if(opening) setTimeout(()=>{ this._updateMenuFiles(); this._refreshMenuDOM(); },20);
+    // [v1.20 FIX] _buildMeterLegend rodava só no componentDidMount, antes do
+    // menu (montado condicionalmente) existir no DOM — sk-input-legend
+    // nunca era encontrado e a legenda ficava vazia pra sempre. Chamado de
+    // novo aqui, toda vez que o menu abre; _skBuilt evita reconstruir à toa.
+    if(opening) setTimeout(()=>{ this._updateMenuFiles(); this._refreshMenuDOM(); this._buildMeterLegend('sk-input-legend'); },20);
   }
 
   _refreshMenuDOM(){
@@ -3768,63 +3803,95 @@ class Component extends DCLogic {
   // ─── EXPORT MP4 (vídeo + áudio) ─────────────────────────────────
   // [v1.20] A versão anterior (WebCodecs + mp4-muxer) só codificava o
   // áudio — nunca capturava o canvas, então o "MP4" saía sem vídeo.
-  // Agora usa o mesmo MediaRecorder(canvas+áudio) já provado no REC e
-  // no PLA Render: captureStream(30) do compCanvas combinado com o
-  // áudio via MediaStreamDestination. MP4 nativo quando o browser
-  // suporta (Safari); senão WebM com codecs vp9/vp8+opus, renomeado
-  // pra .mp4 no download — todo browser aceita o container errado no
-  // nome, o que importa é abrir e tocar com vídeo+áudio sincronizados.
+  // [v1.20 FIX 2] A segunda versão tocava por um AudioBufferSourceNode
+  // independente, desligado do grafo real — o MediaRecorder gravava um
+  // blob de 0 bytes (canvas nunca era atualizado por essa fonte solta,
+  // e testes de bancada mostraram que MediaRecorder(canvas+áudio) puro
+  // não produz dados de forma confiável em todo browser).
+  // [v1.20 FIX 3 — definitivo] Em vez de reinventar a captura, delega
+  // pros mesmos dois caminhos já testados e comprovados do REC:
+  // _startMp4RecWebCodecs (H.264+AAC via WebCodecs, real) com fallback
+  // automático pra _startFallbackRec (MediaRecorder nativo/WebM). Toca
+  // pela cadeia real via _startFile() — só assim compCanvas e
+  // recTapStereo refletem o sinal de verdade — e para sozinho no fim
+  // natural da faixa, como o PLA Render.
   async onExportMP4(){
     const btn=this.exportMp4BtnRef.current, st=this.exportStatusRef.current;
     const setStatus=(msg,col)=>{if(st){st.textContent=msg;st.style.color=col||'#f5a623';}};
     const setBusy=(b)=>{if(!btn) return;btn.style.opacity=b?'0.4':'1';btn.style.pointerEvents=b?'none':'auto';};
 
-    if(!this.audioBuf){setStatus('Nenhum arquivo carregado','#e94f4f');return;}
+    const buf=this.audioBuf;
+    if(!buf){setStatus('Nenhum arquivo carregado','#e94f4f');return;}
 
     setBusy(true);
     setStatus('Gravando vídeo + áudio…','#f5a623');
 
     try {
       this._ensureCtx();
+      if(this.isPlaying) this._pauseFile();
+      this.pauseOffset=0; // exporta sempre do início da faixa
+      this._startFile(); // toca pela cadeia real — monta recTapStereo e liga o redesenho do compCanvas
+
       const dest=this.audioCtx.createMediaStreamDestination();
-      const src=this.audioCtx.createBufferSource();
-      src.buffer=this.audioBuf;
-      src.connect(dest); src.connect(this.audioCtx.destination);
+      if(this.recTapStereo) this.recTapStereo.connect(dest);
+      else if(this.gainNode) this.gainNode.connect(dest);
 
       const compC=this.compCanvas;
       const vs=compC?compC.captureStream(30):new MediaStream();
 
-      let mime='video/webm', isMp4=false;
-      if(MediaRecorder.isTypeSupported('video/mp4;codecs="avc1,mp4a.40.2"')){ mime='video/mp4;codecs="avc1,mp4a.40.2"'; isMp4=true; }
-      else if(MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')){ mime='video/mp4;codecs=avc1'; isMp4=true; }
-      else if(MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')){ mime='video/webm;codecs=vp9,opus'; }
-      else if(MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')){ mime='video/webm;codecs=vp8,opus'; }
-
-      const combined=new MediaStream([...vs.getVideoTracks(),...dest.stream.getAudioTracks()]);
-      const chunks=[];
-      const rec=new MediaRecorder(combined,{mimeType:mime,videoBitsPerSecond:6000000,audioBitsPerSecond:320000});
-      rec.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+      // [v1.20 FIX] Igual ao REC: força o redesenho do composite preso ao
+      // relógio de áudio (ScriptProcessor), não ao rAF/setTimeout do
+      // _tick(). Sem isso, captureStream() do canvas pode não entregar
+      // frame nenhum (aba em segundo plano, ou ambiente sem compositor de
+      // verdade) — foi essa a causa real do MP4 exportado vazio.
+      this._exporting=true;
+      try{
+        this._exportTickProc=this.audioCtx.createScriptProcessor(2048,1,1);
+        this._exportTickProc.onaudioprocess=()=>{ if(this._exporting) this._drawComposite(); };
+        this.masterGainNode.connect(this._exportTickProc);
+        this._exportTickProc.connect(this.audioCtx.createGain());
+      }catch(_){}
 
       const d=new Date(),p=x=>String(x).padStart(2,'0');
       const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
       const bn=(this.playlist[this.currentIdx]?.name||'Monitor').replace(/\.[^.]+$/,'');
+      const fileName=`${bn}_EstudioPla_${stamp}.mp4`;
 
-      rec.onstop=()=>{
-        const blob=new Blob(chunks,{type:isMp4?'video/mp4':'video/webm'});
-        this._dl(`${bn}_EstudioPla_${stamp}.mp4`, blob);
-        this._registerRec(bn+'_MP4');
-        setStatus(`✓ ${bn.slice(0,22)}… vídeo+áudio exportado${isMp4?'':' (webm)'}`,'#3ecf8e');
-        setBusy(false);
-      };
+      const webCodecsOK = typeof VideoEncoder!=='undefined' && typeof AudioEncoder!=='undefined' && typeof MediaStreamTrackProcessor!=='undefined';
+      if(webCodecsOK){
+        try{ await this._startMp4RecWebCodecs(vs,dest,fileName); }
+        catch(e){
+          console.error('[SK] WebCodecs MP4 export falhou, caindo pro fallback:',e);
+          this._startFallbackRec(vs,dest,fileName);
+        }
+      } else {
+        this._startFallbackRec(vs,dest,fileName);
+      }
 
-      rec.start(250);
-      src.onended=()=>{ if(rec.state==='recording') rec.stop(); };
-      src.start();
+      // Espera o fim natural da faixa — mesma lógica de segurança do PLA Render
+      const maxWaitMs=(buf.duration*1000)+8000;
+      const t0=performance.now();
+      await new Promise(resolve=>{
+        const check=()=>{
+          if(!this.isPlaying||performance.now()-t0>maxWaitMs) resolve();
+          else requestAnimationFrame(check);
+        };
+        requestAnimationFrame(check);
+      });
+
+      this._exporting=false;
+      if(this._exportTickProc){ try{this._exportTickProc.disconnect();}catch(_){} this._exportTickProc=null; }
+      if(this._mp4Rec){ await this._mp4Rec.stop(); this._mp4Rec=null; }
+      else if(this._fallbackRec){ this._fallbackRec.stop(); this._fallbackRec=null; }
+      try{ dest.disconnect(); }catch(_){}
+      setStatus(`✓ ${bn.slice(0,22)}… vídeo+áudio exportado`,'#3ecf8e');
     } catch(e){
+      this._exporting=false;
+      if(this._exportTickProc){ try{this._exportTickProc.disconnect();}catch(_){} this._exportTickProc=null; }
       setStatus('Erro: '+e.message.slice(0,36),'#e94f4f');
       console.error('MP4 export:',e);
-      setBusy(false);
     }
+    setBusy(false);
   }
 
   _getBWFMeta(){
@@ -6104,6 +6171,11 @@ class Component extends DCLogic {
       masterRef:this.masterRef, masterMeterRef:this.masterMeterRef, inputMeterRef:this.inputMeterRef, neveBtnRef:this.neveBtnRef, studerBtnRef:this.studerBtnRef,
       onMasterWheel:this.onMasterWheel.bind(this),
       onMasterTap:this.onMasterTap.bind(this),
+      onFaderOverlayClick:this.onFaderOverlayClick.bind(this),
+      onFaderInnerClick:this.onFaderInnerClick.bind(this),
+      _faderTrackDown:this._faderTrackDown.bind(this),
+      _faderTrackMove:this._faderTrackMove.bind(this),
+      _faderTrackUp:this._faderTrackUp.bind(this),
       onNeveWheel:this.onNeveWheel.bind(this),
       onNeveToggle:this.onNeveToggle.bind(this),
       onStuderToggle:this.onStuderToggle.bind(this),

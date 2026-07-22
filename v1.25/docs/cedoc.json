@@ -1,0 +1,46 @@
+{
+  "_schema": "EstudioPla-CEDOC-v0.1",
+  "produto": {
+    "id": "smart-khroma",
+    "nome": "Smart Khroma",
+    "familia": "Smart Suite",
+    "versao_atual": "1.1.0",
+    "data_criacao": "2026-07-11",
+    "data_ultima_atualizacao": "2026-07-13",
+    "status": "ativo",
+    "tipo": "PWA",
+    "categoria": "monitor_audio"
+  },
+  "estudio": {
+    "nome": "Estúdio Plá",
+    "cidade": "Bauru",
+    "estado": "SP",
+    "pais": "Brasil",
+    "operadores": [
+      { "nome": "Kaue Ferreira Moraes", "funcao": "Diretor Criativo · Operador Principal" },
+      { "nome": "Luana Martins", "funcao": "Gestão · Operadora Secundária" }
+    ]
+  },
+  "tecnico": {
+    "runtime": "DC Runtime (x-dc/React)",
+    "audio_engine": "Web Audio API",
+    "canais": "5.1 Surround",
+    "loudness_target": "-24 LUFS",
+    "deploy": "Netlify · HTTPS"
+  },
+  "ecosistema": {
+    "posicao": "downstream",
+    "upstream": "Console Unificado Estúdio Plá",
+    "produtos_relacionados": ["Console Unificado", "Console Multimente Maia", "Smart Master", "Goniômetro Plá"]
+  },
+  "pla_estruturador": {
+    "_nota": "Reservado — Processamento Linear Ambiônico",
+    "versao_protocolo": null
+  },
+  "cedoc": {
+    "id_cedoc": null,
+    "tags": ["audio","5.1","surround","pwa","monitor","loudness","estudio-pla"],
+    "acesso": "interno",
+    "retencao": "permanente"
+  }
+}

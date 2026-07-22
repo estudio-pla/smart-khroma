@@ -1,5 +1,19 @@
 # Changelog — Smart Khroma
 
+## [v1.25.0] — 2026-07-22
+
+### FIX CRÍTICO — Salvar/Restaurar perfil por nome não funcionava
+- `onOperatorSave` (botão SALVAR) chamava `_loadProfile(name)` em vez de
+  `_saveProfile()` — bug de digitação que trocou o verbo. Num nome novo
+  não salvava nada (a chave ainda não existia, `_loadProfile` saía sem
+  fazer nada); num nome já usado, sobrescrevia as configurações atuais
+  com as antigas salvas — o oposto do que o botão promete. Por isso
+  RESTAURAR nunca encontrava nada de verdade salvo.
+- Corrigido: SALVAR agora chama `_saveProfile()`. Testado salvando sob
+  um nome, mudando o estado, e restaurando — valor volta certinho.
+- O "lembrar o último operador automaticamente" (via `sk_operator` no
+  localStorage) já funcionava e continua igual.
+
 ## [v1.24.0] — 2026-07-22
 
 ### FIX — Frame rate baixado mais uma vez (20→15fps)

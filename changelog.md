@@ -1,5 +1,43 @@
 # Changelog — Smart Khroma
 
+## [v1.20.0] — 2026-07-22
+
+### FIX CRÍTICO — Exportação MP4 sem vídeo
+- `onExportMP4` tinha dois caminhos: o principal (WebCodecs + mp4-muxer,
+  usado em Chrome/Edge) codificava só o `AudioBuffer` offline — nunca
+  capturava o canvas, então o arquivo `.mp4` baixado não tinha vídeo
+  nenhum. Só o fallback de Safari (MediaRecorder nativo) combinava
+  canvas + áudio corretamente.
+- Reescrito para sempre usar `MediaRecorder` com o stream combinado de
+  `compCanvas.captureStream(30)` + áudio via `MediaStreamDestination` —
+  o mesmo padrão já validado no REC e no PLA Render. Usa MP4 nativo
+  (avc1/mp4a) quando o browser suporta; senão WebM (vp9/vp8+opus),
+  baixado com extensão `.mp4` (todo player abre — é o container, não a
+  extensão, que determina a decodificação).
+- Removida a dependência de `mp4-muxer` via CDN (jsdelivr) — vanilla
+  Web Audio API / MediaRecorder, sem import externo.
+
+### Fader MASTER — grade de loudness target
+- Grade de dB (`+12/+6/0/-6/-10/-20/-40`) ganhou uma segunda coluna no
+  lado oposto do track com os alvos de loudness de referência:
+  `-14 Spotify · -16 Stream · -23 EBU · -24 Bcast`.
+
+### VU Meter de INPUT (novo)
+- Barra horizontal LED-segmento no menu de Ganho de Entrada, lendo o
+  sinal real pré-Neve/SSL/Studer (pós ganho de entrada) via analysers
+  dedicados (`this.inputAnL`/`this.inputAnR`), ligados direto no
+  splitter — nunca reaproveitados pela matriz 5.1. Legenda com
+  `BCAST / EBU / STREAM / CLIP`.
+
+### VU Meter de MASTER — marcações de referência
+- Tick-marks nos pontos -24/-18/-12/-6/0 dBFS, mesma referência do VU
+  de Input, desenhadas direto no canvas (compacto demais pra texto).
+
+### Confirmado
+- NEVE 1073 e STUDER A800 já estavam fora da interface principal desde
+  a v1.19 — os controles reais (EQ, drive) seguem no menu de
+  configurações, com a lógica de processamento intacta.
+
 ## [v1.18.0] — 2026-07-21
 
 ### FIX CRÍTICO — Pipoca e Vídeo
